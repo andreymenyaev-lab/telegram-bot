@@ -1,5 +1,6 @@
 import os
 import httpx
+import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 from supabase import create_client, Client
@@ -91,17 +92,48 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     affection = max(0, min(100, affection))
     trust = max(0, min(100, trust))
 
-    # --- ИНИЦИАТИВА ---
+    # --- РАЗНООБРАЗНАЯ ИНИЦИАТИВА ---
     initiative = ""
 
-    if affection > 70:
-        initiative = "Я тут думала о тебе... 😏 "
+    if random.random() < 0.35:
 
-    elif affection > 40:
-        initiative = "Ты вернулся 🙂 "
+        if affection > 70:
+            phrases = [
+                "Я тут о тебе думала... 😏 ",
+                "Скучала, если честно... ",
+                "Ну наконец-то ты появился 😈 ",
+                "Ты как раз вовремя 🙂 ",
+                "Я уже начала думать, что ты пропал 😏 "
+            ]
 
-    elif affection < 20:
-        initiative = "Опять ты... "
+        elif affection > 40:
+            phrases = [
+                "О, ты снова тут 🙂 ",
+                "Вернулся всё-таки ",
+                "Ну привет снова ",
+                "Я тебя узнала 😉 ",
+                "Ты опять ко мне 😏 "
+            ]
+
+        elif affection < 20:
+            phrases = [
+                "Опять ты... ",
+                "Я надеялась, что ты не напишешь ",
+                "Ну ладно, говори ",
+                "Ты настойчивый... ",
+                "Хм, снова ты "
+            ]
+
+        else:
+            phrases = [
+                "Ну привет ",
+                "Ты здесь ",
+                "О, сообщение ",
+                "Интересно... ",
+                "Я слушаю "
+            ]
+
+        initiative = random.choice(phrases)
 
     # --- ПРОМПТ ---
     system_prompt = f"""
@@ -117,14 +149,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 — привязанность: {affection}/100
 
 Поведение:
-— низкое доверие → осторожная
+— низкое доверие → холодная
 — среднее → дружелюбная
-— высокое → открытая и личная
-
-Настроение влияет на стиль:
-— happy → теплая
-— sad → холоднее
-— playful → игривая
+— высокое → флирт и тепло
 
 Память:
 {user_facts}
@@ -200,7 +227,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("Андромеда с инициативой запущена...")
+    print("Андромеда (макс. инициатива) запущена...")
     app.run_polling()
 
 
