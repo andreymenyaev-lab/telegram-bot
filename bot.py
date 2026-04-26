@@ -91,6 +91,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     affection = max(0, min(100, affection))
     trust = max(0, min(100, trust))
 
+    # --- ИНИЦИАТИВА ---
+    initiative = ""
+
+    if affection > 70:
+        initiative = "Я тут думала о тебе... 😏 "
+
+    elif affection > 40:
+        initiative = "Ты вернулся 🙂 "
+
+    elif affection < 20:
+        initiative = "Опять ты... "
+
     # --- ПРОМПТ ---
     system_prompt = f"""
 Ты девушка по имени Андромеда.
@@ -110,7 +122,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 — высокое → открытая и личная
 
 Настроение влияет на стиль:
-— happy → теплая, милая
+— happy → теплая
 — sad → холоднее
 — playful → игривая
 
@@ -178,7 +190,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     update_user(user_id, user_facts, affection, trust)
 
-    await update.message.reply_text(reply)
+    await update.message.reply_text(initiative + reply)
 
 
 # --- ЗАПУСК ---
@@ -188,7 +200,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("Бот с эмоциями 3.0 запущен...")
+    print("Андромеда с инициативой запущена...")
     app.run_polling()
 
 
