@@ -66,6 +66,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
 
+    if update.message.photo:
+        await update.message.reply_text("Я пока не умею смотреть картинки 😅 Но можешь описать её?")
+        return
+
     user_id = update.message.from_user.id
     user_text = update.message.text
     current_time = int(time.time())
@@ -176,7 +180,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+    app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle))
 
     print("Андромеда (реакция на отсутствие) запущена...")
     app.run_polling()
