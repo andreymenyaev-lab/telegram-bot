@@ -176,13 +176,30 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(initiative + reply)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import aiohttp  # асинхронный запрос к imgbb
     try:
-        photo = update.message.photo[-1]  # берём лучшее качество
+        photo = update.message.photo[-1]
         file = await context.bot.get_file(photo.file_id)
 
-        # Получаем прямой URL файла Telegram
-        file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file.file_path}"
+        # скачиваем в байты
+        file_bytes = await file.download_as_bytearray()
 
+        # загружаем на imgbb
+        imgbb_api_key = os.getenv("IMGBB_API_KEY")
+        upload_url = "https://api.imgbb.com/1/upload"
+        async with aiohttp.ClientSession() as session:
+            data = aiohttp.FormData()
+            data.add_field("key", imgbb_api_key)
+            data.add_field("image", file_bytes, filename="photo.jpg")
+            async with session.post(upload_url, data=data) as resp:
+                res_json = await resp.json()
+                if res_json.get("success"):
+                    image_url = res_json["data"]["url"]
+                else:
+                    await update.message.reply_text("Не смогла загрузить фото 😅")
+                    return
+
+        # формируем промпт для модели
         prompt_text = (
             "Опиши максимально подробно, что изображено на картинке: "
             "внешность, окружение, стиль. "
@@ -203,7 +220,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             "role": "user",
                             "content": [
                                 {"type": "text", "text": prompt_text},
-                                {"type": "image_url", "image_url": {"url": file_url}}
+                                {"type": "image_url", "image_url": {"url": image_url}}
                             ]
                         }
                     ]
@@ -211,7 +228,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         data = response.json()
-
         if "choices" in data and data["choices"]:
             reply = data["choices"][0]["message"]["content"]
         else:
