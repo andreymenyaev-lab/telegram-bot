@@ -3,9 +3,15 @@ import httpx
 import sqlite3
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
+from supabase import create_client, Client
 
 TOKEN = os.getenv("TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 chat_memory = {}
 
@@ -23,21 +29,25 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 def get_user(user_id):
-    cursor.execute("SELECT facts, affection FROM users WHERE user_id=?", (user_id,))
-    row = cursor.fetchone()
+    response = supabase.table("users").select("*").eq("user_id", user_id).execute()
 
-    if row:
-        return row[0] or "", row[1] or 30
+    if response.data:
+        user = response.data[0]
+        return user.get("facts", ""), user.get("affection", 30)
     else:
-        cursor.execute("INSERT INTO users (user_id, facts, affection) VALUES (?, ?, ?)",
-                       (user_id, "", 30))
-        conn.commit()
+        supabase.table("users").insert({
+            "user_id": user_id,
+            "facts": "",
+            "affection": 30
+        }).execute()
         return "", 30
 
+
 def update_user(user_id, facts, affection):
-    cursor.execute("UPDATE users SET facts=?, affection=? WHERE user_id=?",
-                   (facts, affection, user_id))
-    conn.commit()
+    supabase.table("users").update({
+        "facts": facts,
+        "affection": affection
+    }).eq("user_id", user_id).execute()
 
 # --- КОМАНДА СТАРТ ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
