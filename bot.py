@@ -127,37 +127,56 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Ошибка ответа:", e)
         reply = "Ошибка ИИ 😢"
 
-    # --- УМНАЯ ПАМЯТЬ ---
-    try:
-        async with httpx.AsyncClient() as client:
-            memory_response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "openai/gpt-4o-mini",
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": f"Обнови кратко память о пользователе: {user_facts}"
-                        },
-                        {
-                            "role": "user",
-                            "content": user_text
-                        }
-                    ]
-                }
-            )
+# --- ПАМЯТЬ 3.0 (СТРУКТУРНАЯ) ---
+try:
+    async with httpx.AsyncClient() as client:
+        memory_response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": f"""
+Ты система долгосрочной памяти.
 
-        memory_data = memory_response.json()
+Вот текущая память:
+{user_facts}
 
-        if "choices" in memory_data:
-            user_facts = memory_data["choices"][0]["message"]["content"]
+Новое сообщение пользователя:
+{user_text}
 
-    except Exception as e:
-        print("Ошибка памяти:", e)
+Твоя задача:
+— выделить только важные факты
+— обновить существующие
+— не дублировать
+— писать СТРУКТУРИРОВАННО
+
+Формат строго:
+
+Имя:
+Интересы:
+Цели:
+Особенности:
+
+Если информации нет — оставь поле пустым.
+"""
+                    }
+                ]
+            }
+        )
+
+    memory_data = memory_response.json()
+
+    if "choices" in memory_data:
+        user_facts = memory_data["choices"][0]["message"]["content"]
+
+except Exception as e:
+    print("Ошибка памяти:", e)
 
     update_user(user_id, user_facts, affection)
 
