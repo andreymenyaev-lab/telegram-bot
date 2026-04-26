@@ -177,20 +177,27 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        photo = update.message.photo[-1]
+        photo = update.message.photo[-1]  # берём лучшее качество
         file = await context.bot.get_file(photo.file_id)
 
-        # скачиваем файл
+        # скачиваем фото в байты
         file_bytes = await file.download_as_bytearray()
 
         # кодируем в base64
         image_base64 = base64.b64encode(file_bytes).decode("utf-8")
 
+        # создаём промпт
+        prompt_text = (
+            "Опиши максимально подробно, что изображено на картинке: "
+            "внешность, окружение, стиль. "
+            "Затем добавь короткую дружелюбную реакцию (не делай предположений, если не уверен)."
+        )
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
-                    "Authorization": "Bearer " + str(OPENROUTER_API_KEY),
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "Content-Type": "application/json"
                 },
                 json={
@@ -199,16 +206,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         {
                             "role": "user",
                             "content": [
-                                {
-                                    "type": "text",
-                                    "text": "Опиши максимально подробно, что изображено на картинке. Затем добавь короткую дружелюбную реакцию."
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{image_base64}"
-                                    }
-                                }
+                                {"type": "text", "text": prompt_text},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
                             ]
                         }
                     ]
@@ -217,7 +216,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         data = response.json()
 
-        if "choices" in data:
+        if "choices" in data and data["choices"]:
             reply = data["choices"][0]["message"]["content"]
         else:
             reply = "Не смогла понять изображение 😅"
