@@ -180,13 +180,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo = update.message.photo[-1]  # берём лучшее качество
         file = await context.bot.get_file(photo.file_id)
 
-        # скачиваем фото в байты
-        file_bytes = await file.download_as_bytearray()
+        # Получаем прямой URL файла Telegram
+        file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file.file_path}"
 
-        # кодируем в base64
-        image_base64 = base64.b64encode(file_bytes).decode("utf-8")
-
-        # создаём промпт
         prompt_text = (
             "Опиши максимально подробно, что изображено на картинке: "
             "внешность, окружение, стиль. "
@@ -207,7 +203,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             "role": "user",
                             "content": [
                                 {"type": "text", "text": prompt_text},
-                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+                                {"type": "image_url", "image_url": {"url": file_url}}
                             ]
                         }
                     ]
