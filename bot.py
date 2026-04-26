@@ -90,7 +90,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 50–80 тёплая
 80–100 флиртующая
 
-Память:
+Память о пользователе:
 {user_facts}
 
 Стиль:
@@ -105,7 +105,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Authorization": "Bearer " + str(OPENROUTER_API_KEY),
                     "Content-Type": "application/json"
                 },
                 json={
@@ -127,56 +127,32 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Ошибка ответа:", e)
         reply = "Ошибка ИИ 😢"
 
-# --- ПАМЯТЬ 3.0 (СТРУКТУРНАЯ) ---
-try:
-    async with httpx.AsyncClient() as client:
-        memory_response = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "openai/gpt-4o-mini",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": f"""
-Ты система долгосрочной памяти.
+    # --- ПАМЯТЬ 3.0 (СТАБИЛЬНАЯ БЕЗ КРАШЕЙ) ---
+    try:
+        async with httpx.AsyncClient() as client:
+            prompt_text = "Обнови память о пользователе.\n\nСтарая память:\n" + str(user_facts) + "\n\nНовое сообщение:\n" + str(user_text) + "\n\nСделай кратко и структурировано:\nИмя:\nИнтересы:\nЦели:\nОсобенности:"
 
-Вот текущая память:
-{user_facts}
+            memory_response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer " + str(OPENROUTER_API_KEY),
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "openai/gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": prompt_text}
+                    ]
+                }
+            )
 
-Новое сообщение пользователя:
-{user_text}
+        memory_data = memory_response.json()
 
-Твоя задача:
-— выделить только важные факты
-— обновить существующие
-— не дублировать
-— писать СТРУКТУРИРОВАННО
+        if "choices" in memory_data:
+            user_facts = memory_data["choices"][0]["message"]["content"]
 
-Формат строго:
-
-Имя:
-Интересы:
-Цели:
-Особенности:
-
-Если информации нет — оставь поле пустым.
-"""
-                    }
-                ]
-            }
-        )
-
-    memory_data = memory_response.json()
-
-    if "choices" in memory_data:
-        user_facts = memory_data["choices"][0]["message"]["content"]
-
-except Exception as e:
-    print("Ошибка памяти:", e)
+    except Exception as e:
+        print("Ошибка памяти:", e)
 
     update_user(user_id, user_facts, affection)
 
@@ -190,7 +166,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("Бот с памятью 2.0 запущен...")
+    print("Бот с памятью 3.0 запущен...")
     app.run_polling()
 
 
