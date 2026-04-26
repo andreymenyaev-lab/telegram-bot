@@ -29,25 +29,31 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 def get_user(user_id):
-    response = supabase.table("users").select("*").eq("user_id", user_id).execute()
+    try:
+        response = supabase.table("users").select("*").eq("user_id", user_id).execute()
 
-    if response.data:
-        user = response.data[0]
-        return user.get("facts", ""), user.get("affection", 30)
-    else:
-        supabase.table("users").insert({
-            "user_id": user_id,
-            "facts": "",
-            "affection": 30
-        }).execute()
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+            return user.get("facts", ""), user.get("affection", 30)
+        else:
+            supabase.table("users").insert({
+                "user_id": user_id,
+                "facts": "",
+                "affection": 30
+            }).execute()
+            return "", 30
+    except Exception as e:
+        print("Ошибка get_user:", e)
         return "", 30
 
-
 def update_user(user_id, facts, affection):
-    supabase.table("users").update({
-        "facts": facts,
-        "affection": affection
-    }).eq("user_id", user_id).execute()
+    try:
+        supabase.table("users").update({
+            "facts": facts,
+            "affection": affection
+        }).eq("user_id", user_id).execute()
+    except Exception as e:
+        print("Ошибка update_user:", e)
 
 # --- КОМАНДА СТАРТ ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
