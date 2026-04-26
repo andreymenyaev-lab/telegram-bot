@@ -32,26 +32,35 @@ def get_user(user_id):
     try:
         response = supabase.table("users").select("*").eq("user_id", user_id).execute()
 
+        print("GET RESPONSE:", response)
+
         if response.data and len(response.data) > 0:
             user = response.data[0]
             return user.get("facts", ""), user.get("affection", 30)
         else:
-            supabase.table("users").insert({
+            insert = supabase.table("users").insert({
                 "user_id": user_id,
                 "facts": "",
                 "affection": 30
             }).execute()
+
+            print("INSERT RESPONSE:", insert)
+
             return "", 30
+
     except Exception as e:
         print("Ошибка get_user:", e)
         return "", 30
 
 def update_user(user_id, facts, affection):
     try:
-        supabase.table("users").update({
+        response = supabase.table("users").update({
             "facts": facts,
             "affection": affection
         }).eq("user_id", user_id).execute()
+
+        print("UPDATE RESPONSE:", response)
+
     except Exception as e:
         print("Ошибка update_user:", e)
 
