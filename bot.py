@@ -200,7 +200,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": "Опиши это изображение и отреагируй как живая девушка, немного с характером 😏"},
+                                {"type": "text", "text": "Опиши, что изображено на этой картинке. Затем добавь короткую дружелюбную реакцию.",
                                 {
                                     "type": "image_url",
                                     "image_url": {
