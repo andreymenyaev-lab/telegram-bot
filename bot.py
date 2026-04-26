@@ -68,16 +68,41 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # сохраняем ответ
         chat_memory[user_id].append({"role": "assistant", "content": reply})
 
-        # простое извлечение фактов
-        if "меня зовут" in user_text.lower():
-            user_facts[user_id] += user_text + "\n"
+      except Exception as e:
+        reply = "Ошибка ИИ 😢
+          
+    # умное запоминание через ИИ
+    try:
+    async with httpx.AsyncClient() as client:
+        memory_response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Выдели важные факты о пользователе из текста. Коротко."
+                    },
+                    {
+                        "role": "user",
+                        "content": user_text
+                    }
+                ]
+            }
+        )
 
-        if "я люблю" in user_text.lower():
-            user_facts[user_id] += user_text + "\n"
+    memory_data = memory_response.json()
 
-    except Exception as e:
-        reply = "Ошибка ИИ 😢"
+    if "choices" in memory_data:
+        fact = memory_data["choices"][0]["message"]["content"]
+        user_facts[user_id] += fact + "\n"
 
+except:
+    pass
     await update.message.reply_text(reply)
 
 def main():
