@@ -186,7 +186,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # кодируем в base64
         image_base64 = base64.b64encode(file_bytes).decode("utf-8")
 
-        # запрос к модели с изображением
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -195,12 +194,15 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o-mini",
+                    "model": "openai/gpt-4o",
                     "messages": [
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": "Опиши, что изображено на этой картинке. Затем добавь короткую дружелюбную реакцию.",
+                                {
+                                    "type": "text",
+                                    "text": "Опиши максимально подробно, что изображено на картинке. Затем добавь короткую дружелюбную реакцию."
+                                },
                                 {
                                     "type": "image_url",
                                     "image_url": {
