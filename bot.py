@@ -1,6 +1,7 @@
 import os
 import httpx
 import random
+import base64
 import time
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
@@ -174,14 +175,64 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(initiative + reply)
 
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        photo = update.message.photo[-1]
+        file = await context.bot.get_file(photo.file_id)
+
+        # скачиваем файл
+        file_bytes = await file.download_as_bytearray()
+
+        # кодируем в base64
+        image_base64 = base64.b64encode(file_bytes).decode("utf-8")
+
+        # запрос к модели с изображением
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer " + str(OPENROUTER_API_KEY),
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "openai/gpt-4o-mini",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Опиши это изображение и отреагируй как живая девушка, немного с характером 😏"},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_base64}"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
+
+        data = response.json()
+
+        if "choices" in data:
+            reply = data["choices"][0]["message"]["content"]
+        else:
+            reply = "Не смогла понять изображение 😅"
+
+    except Exception as e:
+        print("Ошибка фото:", e)
+        reply = "Ошибка обработки изображения 😢"
+
+    await update.message.reply_text(reply)
 
 # --- ЗАПУСК ---
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle))
-
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     print("Андромеда (реакция на отсутствие) запущена...")
     app.run_polling()
 
