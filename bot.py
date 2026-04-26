@@ -8,6 +8,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 chat_memory = {}
 user_facts = {}
+affection = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
