@@ -6,7 +6,9 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, fil
 TOKEN = os.getenv("TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-user_memory = {}
+# память
+chat_memory = {}
+user_facts = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
@@ -19,10 +21,26 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_text = update.message.text
 
-    if user_id not in user_memory:
-        user_memory[user_id] = []
+    # краткая память
+    if user_id not in chat_memory:
+        chat_memory[user_id] = []
 
-    user_memory[user_id].append({"role": "user", "content": user_text})
+    chat_memory[user_id].append({"role": "user", "content": user_text})
+
+    # инициализация фактов
+    if user_id not in user_facts:
+        user_facts[user_id] = ""
+
+    # формируем промпт
+    system_prompt = f"""
+Ты девушка по имени Андромеда.
+Ты милая, живая и немного флиртуешь.
+
+Вот что ты знаешь о пользователе:
+{user_facts[user_id]}
+
+Запоминай важные факты о пользователе.
+"""
 
     try:
         async with httpx.AsyncClient() as client:
@@ -33,10 +51,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o-mini",
+                    "model": "mistralai/mistral-7b-instruct",
                     "messages": [
-                        {"role": "system", "content": "Ты девушка по имени Андромеда. Отвечаешь мило и немного флиртуешь."}
-                    ] + user_memory[user_id][-10:]
+                        {"role": "system", "content": system_prompt}
+                    ] + chat_memory[user_id][-10:]
                 }
             )
 
@@ -45,10 +63,20 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "choices" in data:
             reply = data["choices"][0]["message"]["content"]
         else:
-            reply = "Ошибка API"
+            reply = "Ошибка 😢"
+
+        # сохраняем ответ
+        chat_memory[user_id].append({"role": "assistant", "content": reply})
+
+        # простое извлечение фактов
+        if "меня зовут" in user_text.lower():
+            user_facts[user_id] += user_text + "\n"
+
+        if "я люблю" in user_text.lower():
+            user_facts[user_id] += user_text + "\n"
 
     except Exception as e:
-        reply = "Ошибка 😢"
+        reply = "Ошибка ИИ 😢"
 
     await update.message.reply_text(reply)
 
@@ -58,7 +86,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("AI бот запущен...")
+    print("AI бот с памятью запущен...")
     app.run_polling()
 
 if __name__ == "__main__":
