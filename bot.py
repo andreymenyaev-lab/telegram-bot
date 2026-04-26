@@ -51,7 +51,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "mistralai/mistral-7b-instruct",
+                    "model": "openai/gpt-4o-mini",
                     "messages": [
                         {"role": "system", "content": system_prompt}
                     ] + chat_memory[user_id][-10:]
