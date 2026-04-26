@@ -72,7 +72,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply = "Ошибка ИИ 😢
           
     # умное запоминание через ИИ
-    try:
+try:
     async with httpx.AsyncClient() as client:
         memory_response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -103,6 +103,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 except:
     pass
+    
     await update.message.reply_text(reply)
 
 def main():
