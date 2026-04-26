@@ -147,32 +147,52 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         reply = "Ошибка ИИ 😢"
 
-    # умная память
-    try:
-        async with httpx.AsyncClient() as client:
-            memory_response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "openai/gpt-4o-mini",
-                    "messages": [
-                        {"role": "system", "content": "Выдели важные факты о пользователе кратко."},
-                        {"role": "user", "content": user_text}
-                    ]
-                }
-            )
+    # --- УМНАЯ ПАМЯТЬ 2.0 ---
+try:
+    async with httpx.AsyncClient() as client:
+        memory_response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": f"""
+Ты система памяти.
 
-        memory_data = memory_response.json()
+У тебя есть старая память:
+{user_facts}
 
-        if "choices" in memory_data:
-            fact = memory_data["choices"][0]["message"]["content"]
-            user_facts += fact + "\n"
+Новый текст пользователя:
+{user_text}
 
-    except:
-        pass
+Твоя задача:
+— сохранить только важные факты о человеке
+— убрать мусор
+— объединить с предыдущей памятью
+— не дублировать
+— писать кратко
+
+Формат:
+короткие факты списком или текстом
+"""
+                    }
+                ]
+            }
+        )
+
+    memory_data = memory_response.json()
+
+    if "choices" in memory_data:
+        new_memory = memory_data["choices"][0]["message"]["content"]
+        user_facts = new_memory
+
+except Exception as e:
+    print("Ошибка памяти:", e)
 
     # сохраняем в БД
     update_user(user_id, user_facts, affection)
