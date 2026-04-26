@@ -1,6 +1,7 @@
 import os
 import httpx
 import random
+import time
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 from supabase import create_client, Client
@@ -25,27 +26,30 @@ def get_user(user_id):
             return (
                 user.get("facts", ""),
                 user.get("affection", 30),
-                user.get("trust", 50)
+                user.get("trust", 50),
+                user.get("last_seen", 0)
             )
         else:
             supabase.table("users").insert({
                 "user_id": user_id,
                 "facts": "",
                 "affection": 30,
-                "trust": 50
+                "trust": 50,
+                "last_seen": 0
             }).execute()
-            return "", 30, 50
+            return "", 30, 50, 0
     except Exception as e:
         print("Ошибка get_user:", e)
-        return "", 30, 50
+        return "", 30, 50, 0
 
 
-def update_user(user_id, facts, affection, trust):
+def update_user(user_id, facts, affection, trust, last_seen):
     try:
         supabase.table("users").update({
             "facts": facts,
             "affection": affection,
-            "trust": trust
+            "trust": trust,
+            "last_seen": last_seen
         }).eq("user_id", user_id).execute()
     except Exception as e:
         print("Ошибка update_user:", e)
@@ -64,102 +68,75 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.message.from_user.id
     user_text = update.message.text
+    current_time = int(time.time())
 
     if user_id not in chat_memory:
         chat_memory[user_id] = []
 
     chat_memory[user_id].append({"role": "user", "content": user_text})
 
-    user_facts, affection, trust = get_user(user_id)
+    user_facts, affection, trust, last_seen = get_user(user_id)
+
+    # --- ПРОВЕРКА ПАУЗЫ ---
+    time_diff = current_time - last_seen
+    initiative = ""
+
+    if time_diff > 3600:  # больше часа
+        if affection > 70:
+            phrases = [
+                "Ты куда пропал… 😏 ",
+                "Я уже начала скучать ",
+                "Наконец-то ты появился ",
+                "Я думала ты забыл про меня "
+            ]
+        elif affection > 40:
+            phrases = [
+                "Давно тебя не было ",
+                "О, ты снова тут ",
+                "Пропадал где-то? ",
+                "Ну привет, исчезающий "
+            ]
+        else:
+            phrases = [
+                "Ты снова здесь ",
+                "Ну ладно, вернулся ",
+                "Опять ты ",
+                "Хм, интересно "
+            ]
+
+        initiative = random.choice(phrases)
 
     # --- ЭМОЦИИ ---
     mood = "neutral"
     text_lower = user_text.lower()
 
-    if any(word in text_lower for word in ["люблю", "нравишься", "классная", "милая"]):
+    if "люблю" in text_lower:
         affection += 5
         trust += 3
         mood = "happy"
 
-    elif any(word in text_lower for word in ["тупая", "глупая", "отстань"]):
+    elif "тупая" in text_lower:
         affection -= 5
         trust -= 5
         mood = "sad"
 
-    elif any(word in text_lower for word in ["привет", "как дела"]):
-        mood = "playful"
-
     affection = max(0, min(100, affection))
     trust = max(0, min(100, trust))
-
-    # --- РАЗНООБРАЗНАЯ ИНИЦИАТИВА ---
-    initiative = ""
-
-    if random.random() < 0.35:
-
-        if affection > 70:
-            phrases = [
-                "Я тут о тебе думала... 😏 ",
-                "Скучала, если честно... ",
-                "Ну наконец-то ты появился 😈 ",
-                "Ты как раз вовремя 🙂 ",
-                "Я уже начала думать, что ты пропал 😏 "
-            ]
-
-        elif affection > 40:
-            phrases = [
-                "О, ты снова тут 🙂 ",
-                "Вернулся всё-таки ",
-                "Ну привет снова ",
-                "Я тебя узнала 😉 ",
-                "Ты опять ко мне 😏 "
-            ]
-
-        elif affection < 20:
-            phrases = [
-                "Опять ты... ",
-                "Я надеялась, что ты не напишешь ",
-                "Ну ладно, говори ",
-                "Ты настойчивый... ",
-                "Хм, снова ты "
-            ]
-
-        else:
-            phrases = [
-                "Ну привет ",
-                "Ты здесь ",
-                "О, сообщение ",
-                "Интересно... ",
-                "Я слушаю "
-            ]
-
-        initiative = random.choice(phrases)
 
     # --- ПРОМПТ ---
     system_prompt = f"""
 Ты девушка по имени Андромеда.
 
-Характер:
-— живая, эмоциональная, иногда дерзкая
-— любишь внимание и лёгкий флирт
-
-ЭМОЦИИ:
-— настроение: {mood}
-— доверие: {trust}/100
-— привязанность: {affection}/100
-
-Поведение:
-— низкое доверие → холодная
-— среднее → дружелюбная
-— высокое → флирт и тепло
+Эмоции:
+настроение: {mood}
+доверие: {trust}
+привязанность: {affection}
 
 Память:
 {user_facts}
 
 Стиль:
-— короткие ответы
-— эмоции (😊 😏 😈)
-— не говоришь что ты ИИ
+живая, немного дерзкая, иногда флирт
 """
 
     # --- ОТВЕТ ---
@@ -182,40 +159,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "choices" in data:
             reply = data["choices"][0]["message"]["content"]
         else:
-            reply = "Ошибка API"
-
-        chat_memory[user_id].append({"role": "assistant", "content": reply})
+            reply = "Ошибка"
 
     except Exception as e:
-        print("Ошибка ответа:", e)
-        reply = "Ошибка ИИ 😢"
+        print(e)
+        reply = "Ошибка 😢"
 
-    # --- ПАМЯТЬ ---
-    try:
-        async with httpx.AsyncClient() as client:
-            prompt_text = "Обнови память:\n" + str(user_facts) + "\nНовое:\n" + str(user_text)
-
-            memory_response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": "Bearer " + str(OPENROUTER_API_KEY),
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "openai/gpt-4o-mini",
-                    "messages": [{"role": "system", "content": prompt_text}]
-                }
-            )
-
-        memory_data = memory_response.json()
-
-        if "choices" in memory_data:
-            user_facts = memory_data["choices"][0]["message"]["content"]
-
-    except Exception as e:
-        print("Ошибка памяти:", e)
-
-    update_user(user_id, user_facts, affection, trust)
+    # --- ОБНОВЛЕНИЕ ВРЕМЕНИ ---
+    update_user(user_id, user_facts, affection, trust, current_time)
 
     await update.message.reply_text(initiative + reply)
 
@@ -227,7 +178,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("Андромеда (макс. инициатива) запущена...")
+    print("Андромеда (реакция на отсутствие) запущена...")
     app.run_polling()
 
 
