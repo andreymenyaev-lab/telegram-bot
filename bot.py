@@ -138,38 +138,98 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Обработка фото
 # ------------------------------
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import aiohttp
+    import httpx
+    import os
+
     try:
+        if not update.message or not update.message.photo:
+            return
+
+        await update.message.reply_text("Смотрю внимательно...")
+
         photo = update.message.photo[-1]
         file = await context.bot.get_file(photo.file_id)
         file_bytes = await file.download_as_bytearray()
 
-        imgbb_api_key=os.getenv("IMGBB_API_KEY")
-        async with aiohttp.ClientSession() as session:
-            data=aiohttp.FormData()
-            data.add_field("key",imgbb_api_key)
-            data.add_field("image",file_bytes,filename="photo.jpg")
-            async with session.post("https://api.imgbb.com/1/upload",data=data,timeout=20) as resp:
-                result = await resp.json()
-        if not result.get("success"): await update.message.reply_text("Не смогла загрузить фото 😅"); return
+        imgbb_api_key = os.getenv("IMGBB_API_KEY")
 
-        image_url=result["data"]["url"]
-        prompt_text="Ты Андромеда v4.1 — доминантная, умная, многогранная. Анализируй фото глубоко: визуально, эмоционально, интеллектуально, харизма и стиль персонажа/человека."
-        model_name=choose_model("",has_photo=True)
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with aiohttp.ClientSession() as session:
+            data = aiohttp.FormData()
+            data.add_field("key", imgbb_api_key)
+            data.add_field("image", file_bytes, filename="photo.jpg")
+
+            async with session.post(
+                "https://api.imgbb.com/1/upload",
+                data=data,
+                timeout=20
+            ) as resp:
+                result = await resp.json()
+
+        if not result.get("success"):
+            await update.message.reply_text("Не смогла открыть изображение.")
+            return
+
+        image_url = result["data"]["url"]
+
+        prompt_text = """
+Ты Андромеда.
+
+Посмотри на изображение глубоко и умно.
+
+1. Сначала скажи что изображено буквально.
+2. Затем оцени эстетику кадра.
+3. Затем эмоции / атмосферу.
+4. Затем скрытый смысл или детали.
+5. Если человек — оцени образ, харизму, вайб.
+6. Если слабое фото — честно скажи что улучшить.
+
+Отвечай как живая личность, уверенно, красиво, с характером.
+"""
+
+        async with httpx.AsyncClient(timeout=45) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization":f"Bearer {OPENROUTER_API_KEY}","Content-Type":"application/json"},
-                json={"model":model_name,"max_tokens":500,
-                      "messages":[{"role":"user","content":[{"type":"text","text":prompt_text},{"type":"image_url","image_url":{"url":image_url}}]]}
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "google/gemini-2.5-pro",
+                    "max_tokens": 700,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": prompt_text
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_url
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
             )
-        if response.status_code!=200: reply="Я вижу изображение сквозь туман... отправь ещё раз 😏"
-        else:
-            data = response.json()
-            if "choices" in data and data["choices"]:
-                reply = add_ending(data["choices"][0]["message"]["content"], "dominant")
-            else: reply="Не смогла уловить суть изображения 😏"
-    except Exception as e: print("Ошибка фото:", e); reply="Ошибка обработки изображения 😢"
-    await update.message.reply_text(reply)
+
+        if response.status_code != 200:
+            await update.message.reply_text("Сегодня изображение скрывает свои тайны.")
+            return
+
+        data = response.json()
+
+        reply = data["choices"][0]["message"]["content"]
+
+        await update.message.reply_text(reply)
+
+    except Exception as e:
+        print("PHOTO ERROR:", e)
+        await update.message.reply_text("Ошибка обработки изображения.")
 
 # ------------------------------
 # Запуск Webhook
