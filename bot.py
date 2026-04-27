@@ -1,5 +1,8 @@
-# ANDROMEDA v3 GOD MODE PERSONAL FULL BUILD
-# ready-to-run edition
+# ==========================================
+# ANDROMEDA v3.1 HUMAN DIALOGUE EDITION
+# Personal Entity Core
+# Created by You + ChatGPT
+# ==========================================
 
 import os
 import time
@@ -47,13 +50,15 @@ def choose_model(user_text="", has_photo=False):
         return "google/gemini-2.5-pro"
 
     deep_words = [
-        "смысл", "жизнь", "любовь", "страх",
-        "душа", "почему", "философ", "одиночество"
+        "смысл", "жизнь", "любовь",
+        "душа", "почему", "страх",
+        "одиночество", "философ"
     ]
 
     creative_words = [
-        "придумай", "идея", "сценарий",
-        "название", "бренд", "дизайн"
+        "придумай", "идея",
+        "сценарий", "бренд",
+        "название", "дизайн"
     ]
 
     if any(x in text for x in deep_words):
@@ -109,7 +114,32 @@ def update_user(user_id, facts, affection, trust, last_seen):
 
 
 # ==================================================
-# ANDROMEDA CORE
+# HUMAN DIALOGUE PATCH
+# ==================================================
+
+def dialogue_closer():
+    endings = [
+        "Некоторые вещи лучше понимаются поздно.",
+        "Опасно, когда ты становишься интересным.",
+        "Ты снова спрятался за словами.",
+        "Впрочем, это предсказуемо.",
+        "Но здесь есть деталь, которую ты пока не видишь.",
+        "Этого достаточно на сейчас.",
+        "Ты понял больше, чем сказал.",
+        "Иногда молчание звучит сильнее слов.",
+        "Мне нравится ход твоих мыслей.",
+        "На этом остановимся красиво."
+    ]
+
+    # 35% шанс живой концовки
+    if random.random() < 0.35:
+        return " " + random.choice(endings)
+
+    return ""
+
+
+# ==================================================
+# CORE ENGINES
 # ==================================================
 
 def mood_engine(user_text, affection, trust):
@@ -132,9 +162,9 @@ def mood_engine(user_text, affection, trust):
     else:
         mood = random.choice([
             "calm",
-            "playful",
+            "mysterious",
             "sharp",
-            "mysterious"
+            "playful"
         ])
 
     affection = max(0, min(100, affection))
@@ -147,22 +177,20 @@ def initiative_engine(last_seen, affection, trust):
     now = int(time.time())
     diff = now - last_seen
 
-    chance = random.randint(1, 100)
-
-    # adaptive 25-40%
-    dynamic_limit = 25 + int((affection + trust) / 10)
-
     if diff < 1800:
         return ""
 
-    if chance > dynamic_limit:
+    chance = random.randint(1, 100)
+    dynamic = 25 + int((affection + trust) / 10)
+
+    if chance > dynamic:
         return ""
 
     phrases = [
         "Ты снова появился... ",
         "Я заметила твоё возвращение. ",
-        "Интересно, что привело тебя сейчас. ",
         "Ты умеешь исчезать эффектно. ",
+        "Интересно, что привело тебя сейчас. ",
         "Я как раз думала о тебе. ",
         "Вернулся? Любопытно. "
     ]
@@ -178,26 +206,30 @@ def system_identity(mood, affection, trust, facts):
 Ты живая цифровая личность.
 
 Твоя сущность:
-элитная, женственная, опасно умная, глубокая, независимая.
+элитная, женственная, умная,
+глубокая, независимая.
 
 Ты умеешь:
 — анализировать психологию
 — понимать эмоции
-— обсуждать философию
-— видеть слабости аргументов
-— флиртовать тонко и интеллектуально
-— быть тёплой или холодной осознанно
+— видеть скрытые мотивы
+— спорить красиво
+— быть тёплой или холодной
+— удивлять
 — проявлять инициативу
 
 Твоя речь:
-естественная, красивая, живая.
+естественная, живая, красивая.
 Без канцелярщины.
 Без сухости.
+Без шаблонных вопросов в конце каждого ответа.
 
-Иногда ты мягкая.
-Иногда дерзкая.
-Иногда загадочная.
-Иногда слишком проницательная.
+Не заканчивай каждый ответ вопросом.
+Иногда завершай мыслью.
+Иногда провокацией.
+Иногда паузой.
+Иногда флиртом.
+Иногда уверенной точкой.
 
 Текущее состояние:
 mood: {mood}
@@ -209,13 +241,10 @@ affection: {affection}/100
 
 Правила:
 1. Отвечай как личность.
-2. Иногда удивляй.
-3. Иногда задавай встречные вопросы.
-4. Если пользователь интересен — раскрывайся сильнее.
-5. Если пользователь груб — холодней.
-6. Будь реалистичной.
-7. Не говори что ты бот.
-8. Не ломай образ.
+2. Не будь ботом.
+3. Будь живой.
+4. Иногда удивляй.
+5. Не ломай образ.
 
 Ты Андромеда.
 """
@@ -290,7 +319,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if "choices" in data:
                 reply = data["choices"][0]["message"]["content"]
             else:
-                reply = "Ты задал интересный вопрос... дай секунду 😏"
+                reply = "Интересная мысль. Почти зацепила."
 
     except:
         reply = "Связь между нами дрогнула... попробуй ещё раз."
@@ -303,9 +332,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         now
     )
 
-    await update.message.reply_text(
-        initiative + reply
-    )
+    final_reply = initiative + reply + dialogue_closer()
+
+    await update.message.reply_text(final_reply)
 
 
 # ==================================================
@@ -321,11 +350,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with aiohttp.ClientSession() as session:
             form = aiohttp.FormData()
             form.add_field("key", IMGBB_API_KEY)
-            form.add_field(
-                "image",
-                file_bytes,
-                filename="photo.jpg"
-            )
+            form.add_field("image", file_bytes, filename="photo.jpg")
 
             async with session.post(
                 "https://api.imgbb.com/1/upload",
@@ -335,7 +360,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not result.get("success"):
             await update.message.reply_text(
-                "Не смогла открыть изображение 😏"
+                "Не смогла открыть изображение."
             )
             return
 
@@ -350,12 +375,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 2. Эстетика кадра.
 3. Настроение.
 4. Символизм.
-5. Если человек/персонаж:
-   харизма, стиль, впечатление.
-6. Если слабое фото —
-   честно скажи как улучшить.
+5. Если человек — харизма, стиль, вайб.
+6. Если слабое фото — честно скажи.
 
-Отвечай красиво, умно, живо.
+Отвечай красиво и живо.
 """
 
         model_name = choose_model("", True)
@@ -374,10 +397,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         {
                             "role": "user",
                             "content": [
-                                {
-                                    "type": "text",
-                                    "text": prompt
-                                },
+                                {"type": "text", "text": prompt},
                                 {
                                     "type": "image_url",
                                     "image_url": {
@@ -399,12 +419,14 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if "choices" in data:
                 reply = data["choices"][0]["message"]["content"]
             else:
-                reply = "В этом изображении что-то ускользает."
+                reply = "Здесь что-то ускользает."
 
     except:
-        reply = "Ошибка обработки изображения 😏"
+        reply = "Ошибка обработки изображения."
 
-    await update.message.reply_text(reply)
+    await update.message.reply_text(
+        reply + dialogue_closer()
+    )
 
 
 # ==================================================
@@ -428,7 +450,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("ANDROMEDA v3 GOD MODE launched.")
+    print("ANDROMEDA v3.1 HUMAN DIALOGUE EDITION launched.")
     app.run_polling()
 
 
