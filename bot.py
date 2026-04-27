@@ -204,39 +204,43 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("PHOTO HANDLER TRIGGERED")
-    
-    import aiohttp  # асинхронный запрос к imgbb
+
+    import aiohttp
+
     try:
         photo = update.message.photo[-1]
         file = await context.bot.get_file(photo.file_id)
-
-        # скачиваем в байты
         file_bytes = await file.download_as_bytearray()
 
-        # загружаем на imgbb
+        # загрузка на imgbb
         imgbb_api_key = os.getenv("IMGBB_API_KEY")
-        upload_url = "https://api.imgbb.com/1/upload"
+
         async with aiohttp.ClientSession() as session:
             data = aiohttp.FormData()
             data.add_field("key", imgbb_api_key)
             data.add_field("image", file_bytes, filename="photo.jpg")
-            async with session.post(upload_url, data=data, timeout=15) as resp:
-                print("IMGBB STATUS:", resp.status)
-                res_json = await resp.json()
-                if res_json.get("success"):
-                    image_url = res_json["data"]["url"]
-                else:
-                    await update.message.reply_text("Не смогла загрузить фото 😅")
-                    return
 
-        # формируем промпт для модели
+            async with session.post(
+                "https://api.imgbb.com/1/upload",
+                data=data,
+                timeout=20
+            ) as resp:
+
+                print("IMGBB STATUS:", resp.status)
+                result = await resp.json()
+
+        if not result.get("success"):
+            await update.message.reply_text("Не смогла загрузить фото 😅")
+            return
+
+        image_url = result["data"]["url"]
+
         prompt_text = (
-            "Опиши максимально подробно, что изображено на картинке: "
-            "внешность, окружение, стиль. "
-            "Затем добавь короткую дружелюбную реакцию (не делай предположений, если не уверен)."
+            "Опиши подробно что изображено на фото. "
+            "Затем добавь дружелюбную реакцию."
         )
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
@@ -257,7 +261,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             )
 
+        print("OPENROUTER STATUS:", response.status_code)
+        print("OPENROUTER TEXT:", response.text)
+
         data = response.json()
+
         if "choices" in data and data["choices"]:
             reply = data["choices"][0]["message"]["content"]
         else:
