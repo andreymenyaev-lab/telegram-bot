@@ -153,7 +153,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             response = await client.post(
 
-            print("OPENROUTER CONNECTED")    
+            print("OPENROUTER CONNECTED")
+                
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
