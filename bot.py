@@ -224,6 +224,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 },
                 json={
                     "model": "openai/gpt-4o",
+                    "max_tokens": 300,
                     "messages": [
                         {
                             "role": "user",
