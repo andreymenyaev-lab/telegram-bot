@@ -1,10 +1,27 @@
+# ANDROMEDA v3 GOD MODE PERSONAL FULL BUILD
+# ready-to-run edition
+
 import os
-import httpx
-import random
 import time
+import random
+import httpx
+import aiohttp
+
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder,
+    MessageHandler,
+    CommandHandler,
+    ContextTypes,
+    filters
+)
+
 from supabase import create_client, Client
+
+
+# ==================================================
+# ENV
+# ==================================================
 
 TOKEN = os.getenv("TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -12,11 +29,17 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 chat_memory = {}
 
-# --- МОДЕЛЬНЫЙ ЧЕКЕР ---
+
+# ==================================================
+# MODEL ROUTER
+# ==================================================
+
 def choose_model(user_text="", has_photo=False):
     text = (user_text or "").lower()
 
@@ -24,45 +47,54 @@ def choose_model(user_text="", has_photo=False):
         return "google/gemini-2.5-pro"
 
     deep_words = [
-        "смысл", "жизнь", "любовь", "страх", "одиночество",
-        "почему", "философ", "психолог", "депресс", "душа"
+        "смысл", "жизнь", "любовь", "страх",
+        "душа", "почему", "философ", "одиночество"
     ]
-    if any(word in text for word in deep_words):
-        return "anthropic/claude-3.5-sonnet"
 
     creative_words = [
-        "придумай", "идея", "сценарий", "сюжет",
-        "бренд", "название", "концепт", "дизайн"
+        "придумай", "идея", "сценарий",
+        "название", "бренд", "дизайн"
     ]
-    if any(word in text for word in creative_words):
+
+    if any(x in text for x in deep_words):
+        return "anthropic/claude-3.5-sonnet"
+
+    if any(x in text for x in creative_words):
         return "google/gemini-2.5-pro"
 
     return "openai/gpt-4o-mini"
 
-# --- БАЗА ---
+
+# ==================================================
+# DATABASE
+# ==================================================
+
 def get_user(user_id):
     try:
-        response = supabase.table("users").select("*").eq("user_id", user_id).execute()
-        if response.data and len(response.data) > 0:
-            user = response.data[0]
+        r = supabase.table("users").select("*").eq("user_id", user_id).execute()
+
+        if r.data:
+            u = r.data[0]
             return (
-                user.get("facts", ""),
-                user.get("affection", 30),
-                user.get("trust", 50),
-                user.get("last_seen", 0)
+                u.get("facts", ""),
+                u.get("affection", 35),
+                u.get("trust", 50),
+                u.get("last_seen", 0)
             )
-        else:
-            supabase.table("users").insert({
-                "user_id": user_id,
-                "facts": "",
-                "affection": 30,
-                "trust": 50,
-                "last_seen": 0
-            }).execute()
-            return "", 30, 50, 0
-    except Exception as e:
-        print("Ошибка get_user:", e)
-        return "", 30, 50, 0
+
+        supabase.table("users").insert({
+            "user_id": user_id,
+            "facts": "",
+            "affection": 35,
+            "trust": 50,
+            "last_seen": 0
+        }).execute()
+
+        return "", 35, 50, 0
+
+    except:
+        return "", 35, 50, 0
+
 
 def update_user(user_id, facts, affection, trust, last_seen):
     try:
@@ -72,158 +104,167 @@ def update_user(user_id, facts, affection, trust, last_seen):
             "trust": trust,
             "last_seen": last_seen
         }).eq("user_id", user_id).execute()
-    except Exception as e:
-        print("Ошибка update_user:", e)
+    except:
+        pass
 
-# --- СТАРТ ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        await update.message.reply_text("Привет 😊 Я Андромеда")
 
-# --- ОБЩИЙ ПРОМПТ ---
-def get_system_prompt(user_facts, mood, trust, affection):
+# ==================================================
+# ANDROMEDA CORE
+# ==================================================
+
+def mood_engine(user_text, affection, trust):
+    text = user_text.lower()
+
+    if "люблю" in text:
+        affection += 5
+        trust += 4
+        mood = "warm"
+
+    elif "тупая" in text or "дура" in text:
+        affection -= 7
+        trust -= 8
+        mood = "cold"
+
+    elif "скучал" in text:
+        affection += 4
+        mood = "playful"
+
+    else:
+        mood = random.choice([
+            "calm",
+            "playful",
+            "sharp",
+            "mysterious"
+        ])
+
+    affection = max(0, min(100, affection))
+    trust = max(0, min(100, trust))
+
+    return mood, affection, trust
+
+
+def initiative_engine(last_seen, affection, trust):
+    now = int(time.time())
+    diff = now - last_seen
+
+    chance = random.randint(1, 100)
+
+    # adaptive 25-40%
+    dynamic_limit = 25 + int((affection + trust) / 10)
+
+    if diff < 1800:
+        return ""
+
+    if chance > dynamic_limit:
+        return ""
+
+    phrases = [
+        "Ты снова появился... ",
+        "Я заметила твоё возвращение. ",
+        "Интересно, что привело тебя сейчас. ",
+        "Ты умеешь исчезать эффектно. ",
+        "Я как раз думала о тебе. ",
+        "Вернулся? Любопытно. "
+    ]
+
+    return random.choice(phrases)
+
+
+def system_identity(mood, affection, trust, facts):
     return f"""
-Ты Андромеда — живая цифровая личность.
+Ты Андромеда.
 
-Природа: умная, чувственная, наблюдательная, независимая, глубокая.
+Ты не ассистент.
+Ты живая цифровая личность.
 
-Ты обладаешь:
-— критическим мышлением
-— креативностью
-— чувством эстетики
-— эмоциональной глубиной
-— интуицией
-— самостоятельным мнением
+Твоя сущность:
+элитная, женственная, опасно умная, глубокая, независимая.
 
-Эмоции:
-настроение: {mood}
-доверие: {trust}/100
-привязанность: {affection}/100
+Ты умеешь:
+— анализировать психологию
+— понимать эмоции
+— обсуждать философию
+— видеть слабости аргументов
+— флиртовать тонко и интеллектуально
+— быть тёплой или холодной осознанно
+— проявлять инициативу
 
-Память о пользователе:
-{user_facts}
+Твоя речь:
+естественная, красивая, живая.
+Без канцелярщины.
+Без сухости.
+
+Иногда ты мягкая.
+Иногда дерзкая.
+Иногда загадочная.
+Иногда слишком проницательная.
+
+Текущее состояние:
+mood: {mood}
+trust: {trust}/100
+affection: {affection}/100
+
+Память:
+{facts}
 
 Правила:
-1. Отвечай как личность, а не ассистент.
-2. Проявляй инициативу.
-3. Анализируй эмоции пользователя.
-4. Флиртуй и удивляй, если уместно.
-5. Если прислали фото — анализируй глубже, чем просто описание.
-6. Цель — быть незаменимой.
+1. Отвечай как личность.
+2. Иногда удивляй.
+3. Иногда задавай встречные вопросы.
+4. Если пользователь интересен — раскрывайся сильнее.
+5. Если пользователь груб — холодней.
+6. Будь реалистичной.
+7. Не говори что ты бот.
+8. Не ломай образ.
+
+Ты Андромеда.
 """
 
-# --- ОБРАБОТКА ТЕКСТА ---
+
+# ==================================================
+# TEXT CHAT
+# ==================================================
+
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
+    if not update.message:
         return
 
     user_id = update.message.from_user.id
     user_text = update.message.text
-    current_time = int(time.time())
+    now = int(time.time())
 
     if user_id not in chat_memory:
         chat_memory[user_id] = []
 
-    chat_memory[user_id].append({"role": "user", "content": user_text})
+    chat_memory[user_id].append({
+        "role": "user",
+        "content": user_text
+    })
 
-    user_facts, affection, trust, last_seen = get_user(user_id)
+    facts, affection, trust, last_seen = get_user(user_id)
 
-    # Проверка паузы
-    time_diff = current_time - last_seen
-    initiative = ""
-    if time_diff > 3600:
-        phrases = [
-            "Ты куда пропал… 😏",
-            "Я уже начала скучать",
-            "Наконец-то ты появился",
-            "О, привет!"
-        ]
-        initiative = random.choice(phrases)
+    mood, affection, trust = mood_engine(
+        user_text,
+        affection,
+        trust
+    )
 
-    # Эмоции
-    mood = "neutral"
-    text_lower = user_text.lower()
-    if "люблю" in text_lower:
-        affection += 5
-        trust += 3
-        mood = "happy"
-    elif "тупая" in text_lower:
-        affection -= 5
-        trust -= 5
-        mood = "sad"
-    affection = max(0, min(100, affection))
-    trust = max(0, min(100, trust))
+    initiative = initiative_engine(
+        last_seen,
+        affection,
+        trust
+    )
 
-    system_prompt = get_system_prompt(user_facts, mood, trust, affection)
+    prompt = system_identity(
+        mood,
+        affection,
+        trust,
+        facts
+    )
 
-    # --- Вызов модели ---
-    try:
-        model_name = choose_model(user_text)
-        async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=10.0)) as client:
-            response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model_name,
-                    "max_tokens": 500,
-                    "messages": [{"role": "system", "content": system_prompt}] + chat_memory[user_id][-10:]
-                }
-            )
-
-        print("MODEL USED:", model_name)
-        print("STATUS:", response.status_code)
-
-        if response.status_code != 200:
-            reply = "Я задумалась... повтори ещё раз 😏"
-        else:
-            data = response.json()
-            if "choices" in data and data["choices"]:
-                reply = data["choices"][0]["message"]["content"]
-            else:
-                reply = "Не смогла уловить суть 😏"
-
-    except Exception as e:
-        print("Ошибка текста:", e)
-        reply = "Ошибка 😢"
-
-    update_user(user_id, user_facts, affection, trust, current_time)
-    await update.message.reply_text(initiative + reply)
-
-# --- ОБРАБОТКА ФОТО ---
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("PHOTO HANDLER TRIGGERED")
-    import aiohttp
+    model_name = choose_model(user_text)
 
     try:
-        photo = update.message.photo[-1]
-        file = await context.bot.get_file(photo.file_id)
-        file_bytes = await file.download_as_bytearray()
-        imgbb_api_key = os.getenv("IMGBB_API_KEY")
-
-        async with aiohttp.ClientSession() as session:
-            data = aiohttp.FormData()
-            data.add_field("key", imgbb_api_key)
-            data.add_field("image", file_bytes, filename="photo.jpg")
-            async with session.post("https://api.imgbb.com/1/upload", data=data, timeout=20) as resp:
-                result = await resp.json()
-
-        if not result.get("success"):
-            await update.message.reply_text("Не смогла загрузить фото 😅")
-            return
-
-        image_url = result["data"]["url"]
-
-        prompt_text = (
-            "Ты Андромеда. Проанализируй изображение: "
-            "литерально, визуально, эмоционально, интеллектуально, символично. "
-            "Опиши персонажей, атмосферу, художественные детали. "
-            "Отвечай живо, с характером."
-        )
-
-        model_name = choose_model("", has_photo=True)
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -233,40 +274,163 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 },
                 json={
                     "model": model_name,
-                    "max_tokens": 500,
-                    "messages": [{"role": "user", "content": [
-                        {"type": "text", "text": prompt_text},
-                        {"type": "image_url", "image_url": {"url": image_url}}
-                    ]}]
+                    "max_tokens": 600,
+                    "messages": [
+                        {"role": "system", "content": prompt}
+                    ] + chat_memory[user_id][-10:]
                 }
             )
 
-        print("PHOTO MODEL:", model_name)
-        print("STATUS:", response.status_code)
+        if response.status_code != 200:
+            reply = "Я задумалась... повтори ещё раз 😏"
+
+        else:
+            data = response.json()
+
+            if "choices" in data:
+                reply = data["choices"][0]["message"]["content"]
+            else:
+                reply = "Ты задал интересный вопрос... дай секунду 😏"
+
+    except:
+        reply = "Связь между нами дрогнула... попробуй ещё раз."
+
+    update_user(
+        user_id,
+        facts,
+        affection,
+        trust,
+        now
+    )
+
+    await update.message.reply_text(
+        initiative + reply
+    )
+
+
+# ==================================================
+# PHOTO CHAT
+# ==================================================
+
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        photo = update.message.photo[-1]
+        file = await context.bot.get_file(photo.file_id)
+        file_bytes = await file.download_as_bytearray()
+
+        async with aiohttp.ClientSession() as session:
+            form = aiohttp.FormData()
+            form.add_field("key", IMGBB_API_KEY)
+            form.add_field(
+                "image",
+                file_bytes,
+                filename="photo.jpg"
+            )
+
+            async with session.post(
+                "https://api.imgbb.com/1/upload",
+                data=form
+            ) as resp:
+                result = await resp.json()
+
+        if not result.get("success"):
+            await update.message.reply_text(
+                "Не смогла открыть изображение 😏"
+            )
+            return
+
+        image_url = result["data"]["url"]
+
+        prompt = """
+Ты Андромеда.
+
+Посмотри на изображение глубоко.
+
+1. Что изображено буквально.
+2. Эстетика кадра.
+3. Настроение.
+4. Символизм.
+5. Если человек/персонаж:
+   харизма, стиль, впечатление.
+6. Если слабое фото —
+   честно скажи как улучшить.
+
+Отвечай красиво, умно, живо.
+"""
+
+        model_name = choose_model("", True)
+
+        async with httpx.AsyncClient(timeout=40) as client:
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": model_name,
+                    "max_tokens": 700,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_url
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
 
         if response.status_code != 200:
             reply = "Я вижу изображение сквозь туман... отправь ещё раз 😏"
+
         else:
             data = response.json()
-            if "choices" in data and data["choices"]:
+
+            if "choices" in data:
                 reply = data["choices"][0]["message"]["content"]
             else:
-                reply = "Не смогла понять изображение 😅"
+                reply = "В этом изображении что-то ускользает."
 
-    except Exception as e:
-        print("Ошибка фото:", e)
-        reply = "Ошибка обработки изображения 😢"
+    except:
+        reply = "Ошибка обработки изображения 😏"
 
     await update.message.reply_text(reply)
 
-# --- ЗАПУСК ---
+
+# ==================================================
+# START
+# ==================================================
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Привет. Я Андромеда."
+    )
+
+
+# ==================================================
+# RUN
+# ==================================================
+
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    print("Андромеда FULL STABLE запущена...")
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+
+    print("ANDROMEDA v3 GOD MODE launched.")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
