@@ -309,12 +309,28 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==========================
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    print("Андромеда v4 EMPRESS PRESENCE CORE запущена...")
-    app.run_polling()
 
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+
+    PORT = int(os.environ.get("PORT", 8080))
+    RAILWAY_URL = os.getenv("RAILWAY_URL")
+
+    if not RAILWAY_URL:
+        print("Нет RAILWAY_URL")
+        return
+
+    webhook_url = f"https://{RAILWAY_URL}"
+
+    print("ANDROMEDA WEBHOOK MODE LAUNCHED")
+    print("Webhook:", webhook_url)
+
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=webhook_url
+    )
 
 if __name__ == "__main__":
     main()
