@@ -146,47 +146,22 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- ОТВЕТ ---
     try:
-        async with httpx.AsyncClient(
-            timeout=httpx.Timeout(25.0, connect=10.0),
-            follow_redirects=True
-        ) as client:
-            
+        async with httpx.AsyncClient(timeout=25) as client:
             response = await client.post(
-
-            print("OPENROUTER CONNECTED")
-                
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o",
+                    "model": "openai/gpt-4o-mini",
                     "messages": [
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt_text},
-                                {"type": "image_url", "image_url": {"url": image_url}}
-                            ]
-                        }
-                    ]
+                        {"role": "system", "content": system_prompt}
+                    ] + chat_memory[user_id][-10:]
                 }
             )
 
-        print("OPENROUTER STATUS:", response.status_code)
-        print("OPENROUTER TEXT:", response.text)
-
         data = response.json()
-        print("OPENROUTER RESPONSE:", data)
-
-        if "choices" in data and data["choices"]:
-            reply = data["choices"][0]["message"]["content"]
-        else:
-            reply = "Не смогла понять изображение 😅"
-
-        data = response.json()
-        print("OPENROUTER RESPONSE:", data)
 
         if "choices" in data:
             reply = data["choices"][0]["message"]["content"]
