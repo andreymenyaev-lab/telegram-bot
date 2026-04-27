@@ -176,6 +176,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(initiative + reply)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("PHOTO HANDLER TRIGGERED")
+    
     import aiohttp  # асинхронный запрос к imgbb
     try:
         photo = update.message.photo[-1]
