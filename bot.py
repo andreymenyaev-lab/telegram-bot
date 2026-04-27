@@ -1,7 +1,6 @@
 import os
 import httpx
 import random
-import base64
 import time
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
@@ -16,6 +15,32 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 chat_memory = {}
+
+def choose_model(user_text="", has_photo=False):
+    text = (user_text or "").lower()
+
+    # фото / vision
+    if has_photo:
+        return "google/gemini-2.5-pro"
+
+    # глубокие темы
+    deep_words = [
+        "смысл", "жизнь", "любовь", "страх", "одиночество",
+        "почему", "философ", "психолог", "депресс", "душа"
+    ]
+    if any(word in text for word in deep_words):
+        return "anthropic/claude-3.5-sonnet"
+
+    # креатив / идеи
+    creative_words = [
+        "придумай", "идея", "сценарий", "сюжет",
+        "бренд", "название", "концепт", "дизайн"
+    ]
+    if any(word in text for word in creative_words):
+        return "google/gemini-2.5-pro"
+
+    # обычный чат
+    return "openai/gpt-4o-mini"
 
 # --- БАЗА ---
 def get_user(user_id):
@@ -207,7 +232,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- ОТВЕТ ---
     try:
-        async with httpx.AsyncClient(timeout=25) as client:
+        model_name = choose_model(user_text)
+
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(25.0, connect=10.0),
+            follow_redirects=True
+        ) as client:
+
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
@@ -215,22 +246,30 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o-mini",
+                    "model": model_name,
+                    "max_tokens": 500,
                     "messages": [
                         {"role": "system", "content": system_prompt}
                     ] + chat_memory[user_id][-10:]
                 }
             )
 
-        data = response.json()
+        print("MODEL USED:", model_name)
+        print("STATUS:", response.status_code)
+        print("TEXT:", response.text)
 
-        if "choices" in data:
-            reply = data["choices"][0]["message"]["content"]
+        if response.status_code != 200:
+            reply = "Я задумалась... повтори ещё раз 😏"
         else:
-            reply = "Ошибка"
+            data = response.json()
+
+            if "choices" in data:
+                reply = data["choices"][0]["message"]["content"]
+            else:
+                reply = "Что-то ускользнуло от меня 😏"
 
     except Exception as e:
-        print(e)
+        print("Ошибка текста:", e)
         reply = "Ошибка 😢"
 
     # --- ОБНОВЛЕНИЕ ВРЕМЕНИ ---
@@ -297,6 +336,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "9. После анализа ответь как Андромеда: живо, умно, с характером."
         )
 
+        model_name = choose_model("", has_photo=True)
+
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -305,8 +346,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o",
-                    "max_tokens": 300,
+                    "model": model_name,
+                    "max_tokens": 500,
                     "messages": [
                         {
                             "role": "user",
@@ -319,15 +360,18 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             )
 
-        print("OPENROUTER STATUS:", response.status_code)
-        print("OPENROUTER TEXT:", response.text)
+        print("PHOTO MODEL:", model_name)
+        print("STATUS:", response.status_code)
 
-        data = response.json()
-
-        if "choices" in data and data["choices"]:
-            reply = data["choices"][0]["message"]["content"]
+        if response.status_code != 200:
+            reply = "Я вижу изображение сквозь туман... отправь ещё раз 😏"
         else:
-            reply = "Не смогла понять изображение 😅"
+            data = response.json()
+
+            if "choices" in data and data["choices"]:
+                reply = data["choices"][0]["message"]["content"]
+            else:
+                reply = "Не смогла уловить суть изображения 😏"
 
     except Exception as e:
         print("Ошибка фото:", e)
