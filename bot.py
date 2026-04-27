@@ -193,7 +193,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data = aiohttp.FormData()
             data.add_field("key", imgbb_api_key)
             data.add_field("image", file_bytes, filename="photo.jpg")
-            async with session.post(upload_url, data=data) as resp:
+            async with session.post(upload_url, data=data, timeout=15) as resp:
+                print("IMGBB STATUS:", resp.status)
                 res_json = await resp.json()
                 if res_json.get("success"):
                     image_url = res_json["data"]["url"]
