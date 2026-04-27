@@ -160,6 +160,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         data = response.json()
+        print("OPENROUTER RESPONSE:", data)
 
         if "choices" in data:
             reply = data["choices"][0]["message"]["content"]
