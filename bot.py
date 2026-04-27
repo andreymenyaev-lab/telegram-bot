@@ -211,8 +211,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         image_url = result["data"]["url"]
 
         prompt_text = (
-            "Опиши подробно что изображено на фото. "
-            "Затем добавь дружелюбную реакцию."
+            "Это художественный персонаж. "
+            "Опиши её внешность как образ героини: волосы, взгляд, стиль, одежду, энергетику, атмосферу. "
+            "Затем ответь как Андромеда."
         )
 
         async with httpx.AsyncClient(timeout=30) as client:
