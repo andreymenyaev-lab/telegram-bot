@@ -146,8 +146,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- ОТВЕТ ---
     try:
-        async with httpx.AsyncClient(timeout=25) as client:
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(25.0, connect=10.0),
+            follow_redirects=True
+        ) as client:
+            
             response = await client.post(
+
+            print("OPENROUTER CONNECTED")    
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
