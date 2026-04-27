@@ -147,28 +147,36 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # --- ОТВЕТ ---
     try:
         async with httpx.AsyncClient(timeout=25) as client:
-    response = await client.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "openai/gpt-4o",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt_text},
-                        {"type": "image_url", "image_url": {"url": image_url}}
+            response = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "openai/gpt-4o",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt_text},
+                                {"type": "image_url", "image_url": {"url": image_url}}
+                            ]
+                        }
                     ]
                 }
-            ]
-        }
-    )
+            )
 
-    print("OPENROUTER STATUS:", response.status_code)
-    print("OPENROUTER TEXT:", response.text)
+        print("OPENROUTER STATUS:", response.status_code)
+        print("OPENROUTER TEXT:", response.text)
+
+        data = response.json()
+        print("OPENROUTER RESPONSE:", data)
+
+        if "choices" in data and data["choices"]:
+            reply = data["choices"][0]["message"]["content"]
+        else:
+            reply = "Не смогла понять изображение 😅"
 
         data = response.json()
         print("OPENROUTER RESPONSE:", data)
