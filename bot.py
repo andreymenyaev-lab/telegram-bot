@@ -1,174 +1,182 @@
-# ANDROMEDA v5+ IMMORTAL MEMORY CORE WITH LONG-TERM SUMMARIES
-# Webhook-ready | Dominant personality v4 | Growth memory
-
-import os, time, random, httpx, aiohttp
+# ANDROMEDA v5 IMMORTAL MEMORY CORE
+import os
+import time
+import random
+import httpx
+import aiohttp
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from supabase import create_client, Client
 
-# --- CONFIG ---
+# --- ENV ---
 TOKEN = os.getenv("TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # must start with https://
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.getenv("PORT", 8080))
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")
 
+# --- Supabase client ---
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-chat_memory = {}  # временная память текущей сессии
+# --- Chat memory (short-term in RAM) ---
+chat_memory = {}
 
-# --- MEMORY UTILS ---
-def get_user(user_id):
-    try:
-        resp = supabase.table("users").select("*").eq("user_id", user_id).execute()
-        if resp.data and len(resp.data)>0:
-            u = resp.data[0]
-            return u.get("facts",""), u.get("affection",30), u.get("trust",50), u.get("last_seen",0)
-        else:
-            supabase.table("users").insert({"user_id":user_id,"facts":"","affection":30,"trust":50,"last_seen":0}).execute()
-            return "",30,50,0
-    except Exception as e:
-        print("get_user error:",e)
-        return "",30,50,0
-
-def update_user(user_id,facts,affection,trust,last_seen):
-    try:
-        supabase.table("users").update({
-            "facts":facts, "affection":affection, "trust":trust, "last_seen":last_seen
-        }).eq("user_id",user_id).execute()
-    except Exception as e:
-        print("update_user error:",e)
-
-def get_summaries(user_id):
-    try:
-        resp = supabase.table("memory_summaries").select("*").eq("user_id",user_id).execute()
-        if resp.data:
-            return [s['summary'] for s in resp.data]
-        return []
-    except Exception as e:
-        print("get_summaries error:", e)
-        return []
-
-def add_summary(user_id,text):
-    try:
-        supabase.table("memory_summaries").insert({"user_id":user_id,"summary":text,"timestamp":int(time.time())}).execute()
-    except Exception as e:
-        print("add_summary error:", e)
-
-# --- MODEL SELECTION ---
+# --- Model selection ---
 def choose_model(user_text="", has_photo=False):
     text = (user_text or "").lower()
     if has_photo:
         return "google/gemini-2.5-pro"
     deep_words = ["смысл","жизнь","любовь","страх","одиночество","почему","философ","психолог","депресс","душа"]
-    creative_words = ["придумай","идея","сценарий","сюжет","бренд","название","концепт","дизайн"]
-    if any(w in text for w in deep_words):
+    if any(word in text for word in deep_words):
         return "anthropic/claude-3.5-sonnet"
-    if any(w in text for w in creative_words):
+    creative_words = ["придумай","идея","сценарий","сюжет","бренд","название","концепт","дизайн"]
+    if any(word in text for word in creative_words):
         return "google/gemini-2.5-pro"
     return "openai/gpt-4o-mini"
 
-# --- HANDLERS ---
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Я Андромеда v5+, твоя доминантная собеседница с бессмертной памятью 🔥")
+# --- Database helpers ---
+def get_user(user_id):
+    try:
+        response = supabase.table("users").select("*").eq("user_id", user_id).execute()
+        if response.data and len(response.data) > 0:
+            user = response.data[0]
+            return (
+                user.get("facts",""),
+                user.get("affection",30),
+                user.get("trust",50),
+                user.get("last_seen",0)
+            )
+        else:
+            supabase.table("users").insert({"user_id": user_id, "facts":"","affection":30,"trust":50,"last_seen":0}).execute()
+            return "",30,50,0
+    except Exception as e:
+        print("Ошибка get_user:", e)
+        return "",30,50,0
 
+def update_user(user_id,facts,affection,trust,last_seen):
+    try:
+        supabase.table("users").update({"facts":facts,"affection":affection,"trust":trust,"last_seen":last_seen}).eq("user_id",user_id).execute()
+    except Exception as e:
+        print("Ошибка update_user:", e)
+
+def get_summaries(user_id):
+    try:
+        resp = supabase.table("memory_summaries").select("*").eq("user_id", user_id).execute()
+        return resp.data if resp.data else []
+    except:
+        return []
+
+def add_summary(user_id, summary_text):
+    try:
+        supabase.table("memory_summaries").insert({"user_id": user_id,"summary": summary_text,"timestamp": int(time.time())}).execute()
+    except:
+        pass
+
+# --- Start command ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message:
+        await update.message.reply_text("Привет 😊 Я Андромеда. Готова к диалогу и игре доминирования.")
+
+# --- Text handler ---
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message: return
     user_id = update.message.from_user.id
-    text = update.message.text
-    now = int(time.time())
-    
-    if user_id not in chat_memory:
-        chat_memory[user_id] = []
-    chat_memory[user_id].append({"role":"user","content":text})
+    user_text = update.message.text
+    current_time = int(time.time())
+    if user_id not in chat_memory: chat_memory[user_id] = []
+    chat_memory[user_id].append({"role":"user","content":user_text})
 
-    facts, affection, trust, last_seen = get_user(user_id)
-    summaries = get_summaries(user_id)
-    summary_text = " ".join(summaries[-5:])  # последние 5 summary
-
-    # эмоции и настроение
-    mood = "neutral"
-    text_l = text.lower()
-    if "люблю" in text_l: affection+=5; trust+=3; mood="happy"
-    elif "тупая" in text_l: affection-=5; trust-=5; mood="sad"
+    user_facts, affection, trust, last_seen = get_user(user_id)
+    time_diff = current_time - last_seen
+    initiative = ""
+    if time_diff > 3600:
+        if affection>70: phrases=["Ты куда пропал… 😏 ","Я уже начала скучать ","Наконец-то ты появился ","Я думала ты забыл про меня "]
+        elif affection>40: phrases=["Давно тебя не было ","О, ты снова тут ","Пропадал где-то? ","Ну привет, исчезающий "]
+        else: phrases=["Ты снова здесь ","Ну ладно, вернулся ","Опять ты ","Хм, интересно "]
+        initiative=random.choice(phrases)
+    mood="neutral"
+    text_lower=user_text.lower()
+    if "люблю" in text_lower: affection+=5; trust+=3; mood="happy"
+    elif "тупая" in text_lower: affection-=5; trust-=5; mood="sad"
     affection = max(0,min(100,affection))
     trust = max(0,min(100,trust))
 
-    # system prompt с long-term memory
+    # --- Prompt ---
     system_prompt = f"""
-Ты Андромеда v5+, доминантная женщина с глубиной личности и харизмой.
-Память пользователя: {facts}
-Summary последних диалогов: {summary_text}
-Эмоциональное состояние: {mood}, доверие: {trust}/100, привязанность: {affection}/100
-Цель: вести диалог, проявлять инициативу, оставаться строгой дамой, развивать личность пользователя.
-    """
+Ты Андромеда — доминантная, женственная, умная, чувственная личность. 
+Моя цель — вести разговор, проявлять инициативу, анализировать эмоции, давать флирт и провокацию.
 
-    # --- call model ---
+Настроение: {mood}
+Доверие к пользователю: {trust}/100
+Привязанность: {affection}/100
+Память о пользователе: {user_facts}
+"""
+
     try:
-        model_name = choose_model(text)
-        async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=10.0)) as client:
+        model_name = choose_model(user_text)
+        async with httpx.AsyncClient(timeout=httpx.Timeout(25.0,connect=10.0),follow_redirects=True) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={"Authorization":f"Bearer {OPENROUTER_API_KEY}","Content-Type":"application/json"},
                 json={
-                    "model":model_name,
+                    "model": model_name,
                     "max_tokens":500,
                     "messages":[{"role":"system","content":system_prompt}]+chat_memory[user_id][-10:]
                 }
             )
-        reply = response.json()["choices"][0]["message"]["content"] if response.status_code==200 else "Я задумалась... повтори ещё раз 😏"
+        if response.status_code != 200: reply="Я задумалась... повтори ещё раз 😏"
+        else:
+            data = response.json()
+            reply = data.get("choices",[{"message":{"content":"Не смогла уловить суть 😏"}}])[0]["message"]["content"]
     except Exception as e:
-        print("Text error:",e)
+        print("Ошибка текста:", e)
         reply="Ошибка 😢"
 
-    # --- memory update ---
-    update_user(user_id,facts,affection,trust,now)
-    add_summary(user_id,text)  # growth memory
-    await update.message.reply_text(reply)
+    # --- Update memory ---
+    update_user(user_id,user_facts,affection,trust,current_time)
+    add_summary(user_id, user_text[:1000])  # сохраняем краткое summary
+    await update.message.reply_text(initiative+reply)
 
+# --- Photo handler ---
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.photo: return
     try:
         photo = update.message.photo[-1]
         file = await context.bot.get_file(photo.file_id)
         file_bytes = await file.download_as_bytearray()
         async with aiohttp.ClientSession() as session:
             data = aiohttp.FormData()
-            data.add_field("key",IMGBB_API_KEY)
-            data.add_field("image",file_bytes,filename="photo.jpg")
-            async with session.post("https://api.imgbb.com/1/upload",data=data) as resp:
+            data.add_field("key", IMGBB_API_KEY)
+            data.add_field("image", file_bytes, filename="photo.jpg")
+            async with session.post("https://api.imgbb.com/1/upload", data=data, timeout=20) as resp:
                 result = await resp.json()
+        if not result.get("success"): await update.message.reply_text("Не смогла загрузить фото 😅"); return
         image_url = result["data"]["url"]
-        prompt_text="Анализ изображения с глубиной, эмоциями, символизмом"
+        prompt_text = "Анализ изображения как доминантная, аналитичная Андромеда"
         model_name = choose_model("", has_photo=True)
         async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers={"Authorization":f"Bearer {OPENROUTER_API_KEY}","Content-Type":"application/json"},
-                json={
-                    "model":model_name,
-                    "max_tokens":500,
-                    "messages":[{"role":"user","content":[{"type":"text","text":prompt_text},{"type":"image_url","image_url":{"url":image_url}}]}]
-                }
+                json={"model": model_name, "max_tokens":500, "messages":[{"role":"user","content":[{"type":"text","text":prompt_text},{"type":"image_url","image_url":{"url":image_url}}]]}
             )
-        reply = response.json()["choices"][0]["message"]["content"] if response.status_code==200 else "Не смогла уловить суть изображения 😏"
+        data = response.json()
+        reply = data.get("choices",[{"message":{"content":"Не смогла уловить суть изображения 😏"}}])[0]["message"]["content"]
     except Exception as e:
-        print("Photo error:",e)
+        print("Ошибка фото:", e)
         reply="Ошибка обработки изображения 😢"
     await update.message.reply_text(reply)
 
-# --- WEBHOOK RUN ---
+# --- Main / webhook ---
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start",start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,handle))
-    app.add_handler(MessageHandler(filters.PHOTO,handle_photo))
-
-    if not WEBHOOK_URL or not WEBHOOK_URL.startswith("https://"):
-        raise RuntimeError("WEBHOOK_URL must be set and start with https://")
-
-    print("ANDROMEDA v5+ IMMORTAL MEMORY WEBHOOK MODE LAUNCHED")
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    print("ANDROMEDA v5 IMMORTAL MEMORY CORE launched")
+    print("Webhook:", WEBHOOK_URL)
     app.run_webhook(listen="0.0.0.0", port=PORT, webhook_url=WEBHOOK_URL)
 
 if __name__=="__main__":
