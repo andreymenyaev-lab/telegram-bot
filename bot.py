@@ -286,6 +286,37 @@ def psychological_insight(user, text):
 
     return ""
 
+def presence_reading(user, text):
+    t = text.lower()
+
+    moods = []
+
+    if len(text) < 8:
+        moods.append("Ты сегодня немногословен.")
+
+    if "..." in text:
+        moods.append("У тебя сейчас незавершённое состояние.")
+
+    if "?" in text:
+        moods.append("Ты сейчас в поиске ответа.")
+
+    if len(text) > 120:
+        moods.append("Ты многое держишь внутри.")
+
+    if any(w in t for w in ["устал", "пусто", "тяжело"]):
+        moods.append("Сегодня в тебе тяжесть.")
+
+    if any(w in t for w in ["хочу", "вперёд", "делать"]):
+        moods.append("В тебе есть импульс движения.")
+
+    if not moods:
+        return ""
+
+    if random.randint(1,100) <= 40:
+        return random.choice(moods)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -399,6 +430,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     variability = human_variability()
     recall = memory_recall(user)
     insight = psychological_insight(user, text)
+    presence = presence_reading(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -439,6 +471,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Стиль текущего ответа: {variability}
     Возможное воспоминание: {recall}
     Психологическое наблюдение: {insight}
+    Чувствование момента: {presence}
     Текущий анализ: {executive}
 
     Ты помнишь пользователя:
