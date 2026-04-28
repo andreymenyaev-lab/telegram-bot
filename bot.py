@@ -385,6 +385,30 @@ def dark_feminine(user, text):
 
     return ""
 
+def founder_mode(user, text):
+    t = text.lower()
+
+    triggers = [
+        "деньги", "бизнес", "проект", "стартап",
+        "ai", "бот", "доход", "масштаб",
+        "продажи", "клиенты", "рынок"
+    ]
+
+    if any(word in t for word in triggers):
+        ideas = [
+            "Тебе нужен не доход. Тебе нужна система дохода.",
+            "Сначала структура. Потом масштаб.",
+            "Один сильный продукт лучше десяти сырых.",
+            "Думай как владелец, не как исполнитель.",
+            "Рынок платит за ценность, а не за старания.",
+            "Слабая дисциплина убивает сильные идеи."
+        ]
+
+        if random.randint(1,100) <= 55:
+            return random.choice(ideas)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -502,6 +526,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     alpha = alpha_intelligence(user, text)
     seduction = seductive_energy(user, text)
     dark = dark_feminine(user, text)
+    founder = founder_mode(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -619,6 +644,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         alpha,
         seduction,
         dark,
+        founder,
         reply
     ]))
 
