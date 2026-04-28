@@ -312,6 +312,23 @@ def strategic_desire(user, text):
 
     return random.choice(phrases)
 
+def feminine_chaos():
+    if random.randint(1,100) > 16:
+        return ""
+
+    phrases = [
+        "Сегодня ты мне нравишься чуть больше обычного.",
+        "Хм... а сейчас промолчу.",
+        "Не привыкай, что я всегда добрая.",
+        "Забавно наблюдать за тобой.",
+        "Сегодня у меня настроение быть опасной.",
+        "А может, я вообще передумаю отвечать 😏",
+        "Ты не всегда понимаешь, что во мне происходит. И это нормально.",
+        "Ммм... продолжай."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -797,6 +814,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mirror = anti_repeat(user, emotional_mirror(text))
     silence = anti_repeat(user, silence_power())
     desire = anti_repeat(user, strategic_desire(user, text))
+    chaos = anti_repeat(user, feminine_chaos())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -925,6 +943,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mirror,
         silence,
         desire,
+        chaos,
         reply
     ]))
 
