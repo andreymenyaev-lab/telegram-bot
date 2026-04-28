@@ -346,6 +346,23 @@ def high_value_standards():
 
     return random.choice(phrases)
 
+def psychological_reading(text):
+    if random.randint(1,100) > 18:
+        return ""
+
+    phrases = [
+        "Ты сейчас говоришь не всё.",
+        "В тебе больше напряжения, чем ты показываешь.",
+        "Ты устал сильнее, чем признаёшь.",
+        "Сейчас тебе нужен не совет, а ясность.",
+        "За твоими словами есть что-то ещё.",
+        "Ты сильнее, чем звучишь сейчас.",
+        "Я вижу сомнение между строк.",
+        "Ты не так спокоен, как пытаешься выглядеть."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -833,6 +850,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     desire = anti_repeat(user, strategic_desire(user, text))
     chaos = anti_repeat(user, feminine_chaos())
     standards = anti_repeat(user, high_value_standards())
+    reading = anti_repeat(user, psychological_reading(text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -963,6 +981,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         desire,
         chaos,
         standards,
+        reading,
         reply
     ]))
 
