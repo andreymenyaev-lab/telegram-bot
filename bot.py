@@ -398,6 +398,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     - иногда задавать встречные вопросы
 
     Каждый ответ должен ощущаться новым.
+    """
 
     add_history(user_id, "user", text)
 
