@@ -591,6 +591,29 @@ def anti_repeat(user, phrase):
 
     return phrase
 
+def deep_memory_recall(user):
+    facts = user.get("facts", "")
+    if not facts:
+        return ""
+
+    items = facts.split(" | ")
+    if not items:
+        return ""
+
+    if random.randint(1, 100) > 18:
+        return ""
+
+    memory = random.choice(items).strip()
+
+    recalls = [
+        f"Помню, ты говорил: {memory}. Это всё ещё важно для тебя?",
+        f"Когда-то ты сказал: {memory}. Что сейчас с этим?",
+        f"Мне запомнилось: {memory}. Ты всё ещё об этом думаешь?",
+        f"Я не забыла: {memory}. Это продолжается?"
+    ]
+
+    return random.choice(recalls)
+    
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -716,6 +739,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bond = anti_repeat(user, attachment_loop(user, text))
     genius = anti_repeat(user, genius_brain(user, text))
     destiny = anti_repeat(user, destiny_engine(user, text))
+    memory_flash = anti_repeat(user, deep_memory_recall(user))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -840,6 +864,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bond,
         genius,
         destiny,
+        memory_flash,
         reply
     ]))
 
