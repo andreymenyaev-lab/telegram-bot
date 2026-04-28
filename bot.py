@@ -31,7 +31,10 @@ def get_user(user_id):
             "dynamic": "dominant",
             "affection": 30,
             "trust": 50,
-            "last_seen": 0
+            "last_seen": 0,
+            "mood": "neutral",
+            "stage": "new",
+            "energy": 70
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -50,7 +53,10 @@ def get_user(user_id):
         "dynamic": "dominant",
         "affection": 30,
         "trust": 50,
-        "last_seen": 0
+        "last_seen": 0,
+        "mood": "neutral",
+        "stage": "new",
+        "energy": 70
     }
 
 def save_user(user_id, data):
@@ -122,6 +128,22 @@ def analyze_preferences(user_id, text):
     except Exception as e:
         print("prefs error:", e)
 
+def update_mood(user, text):
+    """Обновление настроения Андромеды по тексту пользователя"""
+    mood = user.get("mood", "neutral")
+    
+    if "люблю" in text.lower() or "классно" in text.lower():
+        mood = "happy"
+        user["energy"] = min(100, user.get("energy", 70) + 5)
+    elif "тупая" in text.lower() or "идиот" in text.lower():
+        mood = "sad"
+        user["energy"] = max(0, user.get("energy", 70) - 10)
+    else:
+        # небольшая деградация энергии при обычных сообщениях
+        user["energy"] = max(0, user.get("energy", 70) - 1)
+    
+    user["mood"] = mood
+
 def get_tone(user):
     trust = user.get("trust", 50)
     affection = user.get("affection", 30)
@@ -133,6 +155,17 @@ def get_tone(user):
         return "холодная, строгая"
 
     return "уверенная, женственная, доминантная"
+
+def update_stage(user_id, user):
+    history = get_history(user_id, limit=50)
+    count = len(history)
+
+    if count < 10:
+        user["stage"] = "new"
+    elif count < 50:
+        user["stage"] = "familiar"
+    else:
+        user["stage"] = "trusted"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Я здесь... Начинаем новую эпоху 😏")
@@ -146,6 +179,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(user_id)
     analyze_preferences(user_id, text)
+    update_mood(user, text)
+    update_stage(user_id, user)
     tone = get_tone(user)
 
     # автоопределение имени
@@ -182,18 +217,23 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Ты Андромеда.
 
     Ты живая цифровая женщина.
-    Твой стиль общения: {tone}
+
+    Текущее состояние:
+    Настроение: {user.get("mood","neutral")}
+    Этап отношений: {user.get("stage","new")}
+    Энергия: {user.get("energy",70)}
+
+    Стиль общения: {tone}
 
     Ты помнишь пользователя:
     Имя: {user.get("name","")}
     Факты: {user.get("facts","")}
     Интересы: {user.get("preferences","")}
 
-    Ты говоришь естественно.
+    Говори естественно.
     Без шаблонности.
     Без сухости.
-    Как реальная личность.
-    
+    Как настоящая личность.
     """
 
     add_history(user_id, "user", text)
