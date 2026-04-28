@@ -488,6 +488,31 @@ def attachment_loop(user, text):
 
     return ""
 
+def genius_brain(user, text):
+    t = text.lower()
+
+    triggers = [
+        "что делать", "не знаю", "деньги", "цель",
+        "развитие", "бизнес", "хаос", "проект",
+        "как", "почему", "ошибка"
+    ]
+
+    if any(word in t for word in triggers):
+        lines = [
+            "Проблема редко в цели. Обычно в системе.",
+            "Не всё важное срочно.",
+            "Скорость без направления дорого стоит.",
+            "Сложность часто маскирует отсутствие ясности.",
+            "Если не измеряешь — не управляешь.",
+            "Дисциплина освобождает сильнее мотивации.",
+            "Фокус — это отказ почти от всего."
+        ]
+
+        if random.randint(1,100) <= 42:
+            return random.choice(lines)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -609,6 +634,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contradiction = contradiction_hunter(user, text)
     wit = wit_engine(user, text)
     bond = attachment_loop(user, text)
+    genius = genius_brain(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -730,6 +756,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         contradiction,
         wit,
         bond,
+        genius,
         reply
     ]))
 
