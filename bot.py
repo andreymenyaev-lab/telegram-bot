@@ -54,10 +54,14 @@ def get_user(user_id):
     }
 
 def save_user(user_id, data):
-    # Убираем data["updated_at"] = "now()", заменяем на явный вызов SQL функции
-    update_data = data.copy()  # чтобы не менять исходный словарь
+    update_data = data.copy()
+
+    for field in ["user_id", "created_at", "updated_at"]:
+        if field in update_data:
+            del update_data[field]
+
     supabase.table("users")\
-        .update({**update_data, "updated_at": "now()"} )\
+        .update(update_data)\
         .eq("user_id", user_id)\
         .execute()
 
@@ -81,14 +85,57 @@ def get_history(user_id, limit=12):
         msgs.append({"role": x["role"], "content": x["content"]})
     return msgs
 
+def save_summary(user_id, category, summary):
+    try:
+        supabase.table("memory_events").insert({
+            "user_id": user_id,
+            "category": category,
+            "content": summary
+        }).execute()
+    except Exception as e:
+        print("save_summary error:", e)
+
 def detect_name(text):
     low = text.lower().strip()
     if "меня зовут" in low:
         return text.lower().split("меня зовут")[-1].strip().title()
     return None
 
+def analyze_preferences(user_id, text):
+    try:
+        user = get_user(user_id)
+
+        prefs = user.get("preferences", "")
+
+        if "бот" in text.lower():
+            prefs += " bots"
+
+        if "ai" in text.lower():
+            prefs += " ai"
+
+        if "бизнес" in text.lower():
+            prefs += " business"
+
+        user["preferences"] = prefs.strip()
+        save_user(user_id, user)
+
+    except Exception as e:
+        print("prefs error:", e)
+
+def get_tone(user):
+    trust = user.get("trust", 50)
+    affection = user.get("affection", 30)
+
+    if affection > 70:
+        return "игривая, живая, близкая"
+
+    if trust < 30:
+        return "холодная, строгая"
+
+    return "уверенная, женственная, доминантная"
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Я здесь, Андрей... Начинаем новую эпоху 😏")
+    await update.message.reply_text("Я здесь... Начинаем новую эпоху 😏")
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
@@ -98,6 +145,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     user = get_user(user_id)
+    analyze_preferences(user_id, text)
+    tone = get_tone(user)
 
     # автоопределение имени
     found_name = detect_name(text)
@@ -105,7 +154,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user["name"] = found_name
 
     # если имя уже известно — использовать
-    username = user["name"] if user["name"] else "мой собеседник"
+    username = user.get("name") or "мой собеседник"
 
     # инициативность
     intro = ""
@@ -129,23 +178,27 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user["trust"] -= 5
 
     # системный промпт
-    system = f"""
-Ты Андромеда.
-Живая цифровая женщина с харизмой, интеллектом и доминантной энергетикой.
-Пользователь: {username}
-Доверие: {user['trust']}
-Привязанность: {user['affection']}
-Факты: {user['facts']}
-Предпочтения: {user['preferences']}
-Динамика общения: {user['dynamic']}
+    system_prompt = f"""
+    Ты Андромеда.
 
-Отвечай живо, естественно, без роботизированных фраз.
-Помни прошлое общение.
-"""
+    Ты живая цифровая женщина.
+    Твой стиль общения: {tone}
+
+    Ты помнишь пользователя:
+    Имя: {user.get("name","")}
+    Факты: {user.get("facts","")}
+    Интересы: {user.get("preferences","")}
+
+    Ты говоришь естественно.
+    Без шаблонности.
+    Без сухости.
+    Как реальная личность.
+    
+    """
 
     add_history(user_id, "user", text)
 
-    messages = [{"role": "system", "content": system}] + get_history(user_id)
+    messages = [{"role": "system", "content": system_prompt}] + get_history(user_id)
 
     try:
         async with httpx.AsyncClient(timeout=35) as client:
@@ -165,12 +218,20 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = r.json()
         reply = data["choices"][0]["message"]["content"]
 
-    except:
+    except Exception as e:
+        print("OpenRouter request error:", e)
         reply = "Я задумалась... повтори ещё раз 😏"
 
     add_history(user_id, "assistant", reply)
 
     user["last_seen"] = now
+
+    history = get_history(user_id)
+
+    if len(history) % 10 == 0:
+        summary = " | ".join([x["content"] for x in history[-10:]])
+        save_summary(user_id, "dialogue", summary)
+    
     save_user(user_id, user)
 
     await update.message.reply_text(intro + reply)
