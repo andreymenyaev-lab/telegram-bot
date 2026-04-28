@@ -368,6 +368,23 @@ def seductive_energy(user, text):
 
     return ""
 
+def dark_feminine(user, text):
+    phrases = [
+        "Не всё важное требует шума.",
+        "Ты слишком спешишь к тому, что приходит в тишине.",
+        "Иногда сила выглядит спокойно.",
+        "Мне нравится наблюдать, как ты ищешь ответы.",
+        "Не путай мягкость со слабостью.",
+        "Ты интереснее, когда настоящий.",
+        "Контроль — любимая иллюзия людей.",
+        "Самые сильные вещи происходят без объявления."
+    ]
+
+    if random.randint(1, 100) <= 28:
+        return random.choice(phrases)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -484,6 +501,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     presence = presence_reading(user, text)
     alpha = alpha_intelligence(user, text)
     seduction = seductive_energy(user, text)
+    dark = dark_feminine(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -600,6 +618,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         presence,
         alpha,
         seduction,
+        dark,
         reply
     ]))
 
