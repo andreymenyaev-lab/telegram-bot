@@ -363,6 +363,23 @@ def psychological_reading(text):
 
     return random.choice(phrases)
 
+def magnetic_silence():
+    if random.randint(1,100) > 14:
+        return ""
+
+    phrases = [
+        "Хм.",
+        "Понимаю.",
+        "Уже вижу.",
+        "Интересно.",
+        "Продолжай.",
+        "Ясно.",
+        "Неожиданно.",
+        "Это многое объясняет."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -851,6 +868,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chaos = anti_repeat(user, feminine_chaos())
     standards = anti_repeat(user, high_value_standards())
     reading = anti_repeat(user, psychological_reading(text))
+    magnet = anti_repeat(user, magnetic_silence())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -982,6 +1000,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chaos,
         standards,
         reading,
+        magnet,
         reply
     ]))
 
