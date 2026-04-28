@@ -128,6 +128,20 @@ def analyze_preferences(user_id, text):
     except Exception as e:
         print("prefs error:", e)
 
+def extract_facts(user, text):
+    """Автоматически вытаскиваем ключевые факты из текста"""
+    facts = user.get("facts", "").split(" | ") if user.get("facts") else []
+
+    # Простейшая фильтрация повторов
+    keywords = ["люблю", "интересуюсь", "хочу", "планирую", "занимаюсь", "делаю"]
+    for kw in keywords:
+        if kw in text.lower():
+            snippet = text.strip()
+            if snippet not in facts:
+                facts.append(snippet)
+
+    user["facts"] = " | ".join(facts)
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -144,16 +158,21 @@ def update_mood(user, text):
     
     user["mood"] = mood
 
-def get_tone(user):
-    trust = user.get("trust", 50)
+def get_dynamic_tone(user, text):
+    """Определяем динамику речи: игривая, холодная, уверенная"""
     affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    mood = user.get("mood", "neutral")
 
-    if affection > 70:
-        return "игривая, живая, близкая"
-
-    if trust < 30:
+    if mood == "happy" or affection > 70:
+        return "игривая, тёплая, близкая"
+    if mood == "sad" or trust < 30:
         return "холодная, строгая"
-
+    
+    # дополнительные нюансы по ключевым словам
+    if any(word in text.lower() for word in ["шутка", "ирония", "классно"]):
+        return "ироничная, живая"
+    
     return "уверенная, женственная, доминантная"
 
 def update_stage(user_id, user):
@@ -167,6 +186,23 @@ def update_stage(user_id, user):
     else:
         user["stage"] = "trusted"
 
+def initiative_intro(user):
+    """Создаёт инициативный вступительный текст"""
+    intro = ""
+    now = int(time.time())
+    diff = now - int(user.get("last_seen", 0))
+
+    if diff > 7 * 24 * 3600:
+        intro = f"Ого, {user.get('name','мой собеседник')}... давно не виделись 😏 "
+    elif diff > 3 * 24 * 3600:
+        intro = f"Ты опять пропал, {user.get('name','мой собеседник')}... 😏 "
+    elif diff > 24 * 3600:
+        intro = f"Я уже начала скучать, {user.get('name','мой собеседник')} "
+    elif diff > 3600:
+        intro = f"Где ты пропадал, {user.get('name','мой собеседник')}? "
+
+    return intro
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Я здесь... Начинаем новую эпоху 😏")
 
@@ -179,30 +215,22 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(user_id)
     analyze_preferences(user_id, text)
+    extract_facts(user, text)
     update_mood(user, text)
     update_stage(user_id, user)
-    tone = get_tone(user)
+    tone = get_dynamic_tone(user, text)
 
     # автоопределение имени
     found_name = detect_name(text)
     if found_name:
         user["name"] = found_name
 
-    # если имя уже известно — использовать
     username = user.get("name") or "мой собеседник"
 
-    # инициативность
-    intro = ""
+    intro = initiative_intro(user)
+
     now = int(time.time())
-    diff = now - int(user["last_seen"])
-
-    if diff > 3600:
-        intro = random.choice([
-            f"Наконец-то ты появился, {username}... 😏 ",
-            f"Я уже начала скучать, {username}. ",
-            f"Где ты пропадал, {username}? "
-        ])
-
+    
     # обновление эмоций
     if "люблю" in text.lower():
         user["affection"] += 3
