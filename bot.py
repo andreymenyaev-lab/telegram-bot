@@ -532,6 +532,26 @@ def evolve_personality(user):
     else:
         user["dynamic"] = "dominant"
 
+def memory_weight(user, text):
+    t = text.lower()
+
+    score = 0
+
+    important_words = [
+        "хочу", "мечтаю", "боюсь", "люблю",
+        "цель", "бизнес", "деньги", "будущее",
+        "отношения", "проект", "ai", "семья"
+    ]
+
+    for word in important_words:
+        if word in t:
+            score += 1
+
+    if len(text) > 80:
+        score += 1
+
+    return score
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -634,6 +654,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     user = get_user(user_id)
+    weight = memory_weight(user, text)
     analyze_preferences(user_id, text)
     extract_facts(user, text)
     update_mood(user, text)
@@ -671,12 +692,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # обновление эмоций
     if "люблю" in text.lower():
-        user["affection"] += 3
-        user["trust"] += 2
+        user["affection"] += 3 + weight
+        user["trust"] += 2 + weight
 
     if "тупая" in text.lower():
-        user["affection"] -= 5
-        user["trust"] -= 5
+        user["affection"] -= 5 + weight
+        user["trust"] -= 5 + weight
 
     # системный промпт
     system_prompt = f"""
