@@ -15,15 +15,43 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def get_user(user_id):
-    r = supabase.table("users").select("*").eq("user_id", user_id).execute()
-    if r.data:
-        return r.data[0]
+    try:
+        user_id = int(user_id)
 
-    supabase.table("users").insert({
-        "user_id": user_id
-    }).execute()
+        r = supabase.table("users").select("*").eq("user_id", user_id).execute()
 
-    return get_user(user_id)
+        if r.data and len(r.data) > 0:
+            return r.data[0]
+
+        supabase.table("users").insert({
+            "user_id": user_id,
+            "name": "",
+            "facts": "",
+            "preferences": "",
+            "dynamic": "dominant",
+            "affection": 30,
+            "trust": 50,
+            "last_seen": 0
+        }).execute()
+
+        r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
+
+        if r2.data:
+            return r2.data[0]
+
+    except Exception as e:
+        print("GET USER ERROR:", e)
+
+    return {
+        "user_id": user_id,
+        "name": "",
+        "facts": "",
+        "preferences": "",
+        "dynamic": "dominant",
+        "affection": 30,
+        "trust": 50,
+        "last_seen": 0
+    }
 
 def save_user(user_id, data):
     data["updated_at"] = "now()"
