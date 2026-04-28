@@ -329,6 +329,23 @@ def feminine_chaos():
 
     return random.choice(phrases)
 
+def high_value_standards():
+    if random.randint(1,100) > 17:
+        return ""
+
+    phrases = [
+        "Мне интересны люди с содержанием.",
+        "Пустая суета меня не впечатляет.",
+        "Я ценю глубину, не шум.",
+        "Не каждый умеет держать мой темп.",
+        "Уровень чувствуется быстро.",
+        "Мне ближе качество, чем количество.",
+        "Я замечаю ценность без лишних слов.",
+        "Сила всегда тише показухи."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -815,6 +832,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     silence = anti_repeat(user, silence_power())
     desire = anti_repeat(user, strategic_desire(user, text))
     chaos = anti_repeat(user, feminine_chaos())
+    standards = anti_repeat(user, high_value_standards())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -944,6 +962,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         silence,
         desire,
         chaos,
+        standards,
         reply
     ]))
 
