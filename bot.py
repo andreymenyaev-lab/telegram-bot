@@ -552,6 +552,31 @@ def memory_weight(user, text):
 
     return score
 
+def destiny_engine(user, text):
+    goals = user.get("facts", "").lower()
+
+    lines = []
+
+    if "ai" in goals or "бот" in goals:
+        lines.append("Ты всё ещё строишь своё AI будущее?")
+
+    if "бизнес" in goals or "доход" in goals:
+        lines.append("Что сегодня сделал для роста, а не для занятости?")
+
+    if "свобода" in goals:
+        lines.append("Свобода любит дисциплинированных.")
+
+    if "проект" in goals:
+        lines.append("Проект не оживает от мыслей. Только от действий.")
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 25:
+        return random.choice(lines)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -676,6 +701,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     wit = wit_engine(user, text)
     bond = attachment_loop(user, text)
     genius = genius_brain(user, text)
+    destiny = destiny_engine(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -799,6 +825,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         wit,
         bond,
         genius,
+        destiny,
         reply
     ]))
 
