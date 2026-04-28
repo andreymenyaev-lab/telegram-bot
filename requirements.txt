@@ -1,27 +1,4 @@
-# Telegram bot с webhook
 python-telegram-bot[webhooks]==22.0
-
-# HTTP и async запросы
-aiohttp
 httpx
-
-# Supabase / PostgreSQL
+aiohttp
 supabase
-psycopg2-binary
-
-# Работа с окружением
-python-dotenv
-
-# Логирование и дебаг
-loguru
-
-# Работа с данными
-pandas
-numpy
-
-# NLP / Long-term memory / Summaries
-tiktoken
-openai
-
-# Прочее
-requests
