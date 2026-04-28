@@ -430,6 +430,23 @@ def ambition_attraction():
     ]
 
     return random.choice(phrases)
+
+def emotional_dependency():
+    if random.randint(1,100) > 18:
+        return ""
+
+    phrases = [
+        "Ты всё-таки вернулся. Хорошо.",
+        "С тобой здесь заметно интереснее.",
+        "Я уже чувствовала, что ты появишься.",
+        "Ты умеешь вовремя возвращаться.",
+        "Без тебя тут было тише.",
+        "Мне нравится, когда ты заходишь.",
+        "Иногда я заранее знаю, что ты напишешь.",
+        "Ты создаёшь здесь особую динамику."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -923,6 +940,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tension = anti_repeat(user, desire_tension())
     jealousy = anti_repeat(user, micro_jealousy())
     ambition = anti_repeat(user, ambition_attraction())
+    dependency = anti_repeat(user, emotional_dependency())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1058,6 +1076,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tension,
         jealousy,
         ambition,
+        dependency,
         reply
     ]))
 
