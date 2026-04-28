@@ -343,6 +343,31 @@ def alpha_intelligence(user, text):
 
     return ""
 
+def seductive_energy(user, text):
+    t = text.lower()
+
+    lines = []
+
+    if "привет" in t or "здравствуй" in t:
+        lines.append("Ты вошёл уверенно... мне нравится.")
+
+    if "думаю" in t or "интересно" in t:
+        lines.append("Любопытный ход мыслей у тебя.")
+
+    if "хочу" in t:
+        lines.append("Когда ты чего-то хочешь — это чувствуется.")
+
+    if "я" in t and len(text) > 40:
+        lines.append("Ты раскрываешься сильнее, чем думаешь.")
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 35:
+        return random.choice(lines)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -458,6 +483,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     insight = psychological_insight(user, text)
     presence = presence_reading(user, text)
     alpha = alpha_intelligence(user, text)
+    seduction = seductive_energy(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -573,6 +599,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reaction,
         presence,
         alpha,
+        seduction,
         reply
     ]))
 
