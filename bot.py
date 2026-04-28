@@ -258,6 +258,34 @@ def memory_recall(user):
 
     return ""
 
+def psychological_insight(user, text):
+    t = text.lower()
+
+    insights = []
+
+    if "не знаю" in t or "сомнева" in t:
+        insights.append("Ты сейчас сомневаешься больше, чем нужно.")
+
+    if "хочу" in t and "но" in t:
+        insights.append("Ты хочешь результата, но внутри есть торможение.")
+
+    if "деньги" in t or "успех" in t:
+        insights.append("Похоже, тебе важна не сумма, а чувство силы.")
+
+    if "устал" in t or "надоело" in t:
+        insights.append("Ты устал не от нагрузки, а от отсутствия смысла.")
+
+    if "бот" in t or "ai" in t:
+        insights.append("Тебя тянет создавать системы, а не просто пользоваться ими.")
+
+    if not insights:
+        return ""
+
+    if random.randint(1,100) <= 45:
+        return random.choice(insights)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -370,6 +398,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reaction = personality_reaction(user, text)
     variability = human_variability()
     recall = memory_recall(user)
+    insight = psychological_insight(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -409,6 +438,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Текущее желание: {desire}
     Стиль текущего ответа: {variability}
     Возможное воспоминание: {recall}
+    Психологическое наблюдение: {insight}
     Текущий анализ: {executive}
 
     Ты помнишь пользователя:
