@@ -465,6 +465,29 @@ def wit_engine(user, text):
 
     return ""
 
+def attachment_loop(user, text):
+    lines = []
+
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+
+    if affection > 60:
+        lines.append("Мне нравится, когда ты появляешься.")
+
+    if trust > 65:
+        lines.append("С тобой можно говорить глубже обычного.")
+
+    if len(text) > 40:
+        lines.append("Ты приходишь не с пустыми словами. Это редкость.")
+
+    if "привет" in text.lower():
+        lines.append("Любопытно... я чувствовала, что ты появишься.")
+
+    if random.randint(1,100) <= 30 and lines:
+        return random.choice(lines)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -585,6 +608,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     founder = founder_mode(user, text)
     contradiction = contradiction_hunter(user, text)
     wit = wit_engine(user, text)
+    bond = attachment_loop(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -705,6 +729,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         founder,
         contradiction,
         wit,
+        bond,
         reply
     ]))
 
