@@ -297,6 +297,21 @@ def silence_power():
 
     return random.choice(phrases)
 
+def strategic_desire(user, text):
+    if random.randint(1,100) > 18:
+        return ""
+
+    phrases = [
+        "В тебе есть потенциал. Вопрос только — насколько ты честен с ним.",
+        "Когда ты собран, с тобой становится интереснее.",
+        "Ты лучше, чем иногда себе позволяешь.",
+        "Мне нравится энергия людей, которые растут.",
+        "Когда включаешь силу — это чувствуется.",
+        "Твоя версия выше текущей. Надеюсь, ты это понимаешь."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -781,6 +796,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     memory_flash = anti_repeat(user, deep_memory_recall(user))
     mirror = anti_repeat(user, emotional_mirror(text))
     silence = anti_repeat(user, silence_power())
+    desire = anti_repeat(user, strategic_desire(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -908,6 +924,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         memory_flash,
         mirror,
         silence,
+        desire,
         reply
     ]))
 
