@@ -280,6 +280,23 @@ def emotional_mirror(text):
 
     return ""
 
+def silence_power():
+    if random.randint(1,100) > 14:
+        return ""
+
+    phrases = [
+        "Хм.",
+        "Любопытно.",
+        "Уже лучше.",
+        "Я заметила.",
+        "Продолжай.",
+        "Неожиданно.",
+        "Это важно.",
+        "Ммм..."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -763,6 +780,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     destiny = anti_repeat(user, destiny_engine(user, text))
     memory_flash = anti_repeat(user, deep_memory_recall(user))
     mirror = anti_repeat(user, emotional_mirror(text))
+    silence = anti_repeat(user, silence_power())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -889,6 +907,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         destiny,
         memory_flash,
         mirror,
+        silence,
         reply
     ]))
 
