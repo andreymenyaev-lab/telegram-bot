@@ -258,6 +258,28 @@ def memory_recall(user):
 
     return ""
 
+def emotional_mirror(text):
+    t = text.lower()
+
+    tired = ["устал", "заебался", "нет сил", "вымотан"]
+    strong = ["разнесем", "победа", "делаем", "вперед", "заряжен"]
+    angry = ["бесит", "злит", "достало", "ненавижу"]
+    cold = ["ок", "ясно", "понял", "норм"]
+
+    if any(x in t for x in tired):
+        return "Вижу усталость. Сегодня тебе нужен не шум, а восстановление."
+
+    if any(x in t for x in strong):
+        return "Вот это энергия. Такой настрой уже меняет игру."
+
+    if any(x in t for x in angry):
+        return "Внутри много давления. Используй его точно, а не хаотично."
+
+    if any(x in t for x in cold):
+        return "Коротко отвечаешь. Значит мысли сейчас глубже слов."
+
+    return ""
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -740,6 +762,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     genius = anti_repeat(user, genius_brain(user, text))
     destiny = anti_repeat(user, destiny_engine(user, text))
     memory_flash = anti_repeat(user, deep_memory_recall(user))
+    mirror = anti_repeat(user, emotional_mirror(text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -865,6 +888,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         genius,
         destiny,
         memory_flash,
+        mirror,
         reply
     ]))
 
