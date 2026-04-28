@@ -513,6 +513,25 @@ def genius_brain(user, text):
 
     return ""
 
+def evolve_personality(user):
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+
+    if affection > 80 and trust > 80:
+        user["dynamic"] = "deep_attached"
+
+    elif trust > 70:
+        user["dynamic"] = "warm_strategic"
+
+    elif affection < 20:
+        user["dynamic"] = "cold_distant"
+
+    elif trust < 30:
+        user["dynamic"] = "guarded"
+
+    else:
+        user["dynamic"] = "dominant"
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -619,6 +638,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extract_facts(user, text)
     update_mood(user, text)
     update_stage(user_id, user)
+    evolve_personality(user)
     detect_goals(user, text)
     tone = get_dynamic_tone(user, text)
     mode = detect_mode(user, text)
@@ -671,6 +691,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     Стиль общения: {tone}
     Текущий режим: {mode}
+    Личностная эволюция: {user.get("dynamic","dominant")}
     Текущее желание: {desire}
     Стиль текущего ответа: {variability}
     Возможное воспоминание: {recall}
