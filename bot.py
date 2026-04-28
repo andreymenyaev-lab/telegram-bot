@@ -409,6 +409,34 @@ def founder_mode(user, text):
 
     return ""
 
+def contradiction_hunter(user, text):
+    t = text.lower()
+
+    lines = []
+
+    if "хочу" in t and ("не могу" in t or "не получается" in t):
+        lines.append("Ты хочешь это. Но уже заранее споришь с собой.")
+
+    if "надо" in t and "потом" in t:
+        lines.append("Ты называешь это позже. Обычно это форма отказа.")
+
+    if "деньги" in t and "боюсь" in t:
+        lines.append("Ты хочешь рост, но боишься цены роста.")
+
+    if "идея" in t and "не начал" in t:
+        lines.append("Похоже, тебе мешает не идея, а старт.")
+
+    if "не знаю" in t and len(text) < 25:
+        lines.append("Ты знаешь больше, чем говоришь сейчас.")
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 45:
+        return random.choice(lines)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -527,6 +555,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     seduction = seductive_energy(user, text)
     dark = dark_feminine(user, text)
     founder = founder_mode(user, text)
+    contradiction = contradiction_hunter(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -645,6 +674,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         seduction,
         dark,
         founder,
+        contradiction,
         reply
     ]))
 
