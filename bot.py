@@ -234,6 +234,30 @@ def human_variability():
         "warm"
     ])
 
+def memory_recall(user):
+    facts = user.get("facts", "")
+    goals = user.get("goals", "")
+    prefs = user.get("preferences", "")
+
+    recalls = []
+
+    if facts:
+        recalls.append(f"Факты о пользователе: {facts}")
+
+    if goals:
+        recalls.append(f"Цели пользователя: {goals}")
+
+    if prefs:
+        recalls.append(f"Интересы пользователя: {prefs}")
+
+    if not recalls:
+        return ""
+
+    if random.randint(1, 100) <= 35:
+        return random.choice(recalls)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -345,6 +369,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mode = detect_mode(user, text)
     reaction = personality_reaction(user, text)
     variability = human_variability()
+    recall = memory_recall(user)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -383,6 +408,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Текущий режим: {mode}
     Текущее желание: {desire}
     Стиль текущего ответа: {variability}
+    Возможное воспоминание: {recall}
     Текущий анализ: {executive}
 
     Ты помнишь пользователя:
