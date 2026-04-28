@@ -54,8 +54,12 @@ def get_user(user_id):
     }
 
 def save_user(user_id, data):
-    data["updated_at"] = "now()"
-    supabase.table("users").update(data).eq("user_id", user_id).execute()
+    # Убираем data["updated_at"] = "now()", заменяем на явный вызов SQL функции
+    update_data = data.copy()  # чтобы не менять исходный словарь
+    supabase.table("users")\
+        .update({**update_data, "updated_at": "now()"} )\
+        .eq("user_id", user_id)\
+        .execute()
 
 def add_history(user_id, role, content):
     supabase.table("chat_history").insert({
