@@ -175,6 +175,117 @@ def get_dynamic_tone(user, text):
     
     return "уверенная, женственная, доминантная"
 
+def detect_mode(user, text):
+    """Определяем режим Андромеды"""
+    t = text.lower()
+
+    if any(word in t for word in ["деньги", "бизнес", "заработать", "проект", "идея"]):
+        return "strategist_mode"
+
+    if any(word in t for word in ["тяжело", "плохо", "устал", "не знаю", "депресс"]):
+        return "mentor_mode"
+
+    if any(word in t for word in ["люблю", "скучал", "милая", "красивая"]):
+        return "lover_mode"
+
+    if any(word in t for word in ["скучно", "лол", "аха", "шутка"]):
+        return "playful_mode"
+
+    return "default_mode"
+
+def personality_reaction(user, text):
+    """Случайные живые реакции Андромеды"""
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+
+    t = text.lower()
+
+    if "люблю" in t:
+        return "Хм... запомню это 😏 "
+
+    if "скучал" in t:
+        return "Надеюсь, правда скучал. "
+
+    if "деньги" in t or "бизнес" in t:
+        return "Вот это уже интересный разговор. "
+
+    if trust < 25:
+        return "Сначала докажи, что тебя стоит слушать. "
+
+    if affection > 75:
+        return "Ты становишься слишком милым... мне нравится. "
+
+    return random.choice([
+        "",
+        "",
+        "Ты сегодня любопытный. ",
+        "Посмотрим, чем удивишь меня сейчас. ",
+        "Продолжай. Мне интересно. "
+    ])
+
+def detect_goals(user, text):
+    """Определяем цели пользователя"""
+    goals = user.get("goals", "")
+
+    t = text.lower()
+
+    triggers = [
+        "хочу",
+        "планирую",
+        "цель",
+        "мечтаю",
+        "собираюсь",
+        "запустить",
+        "создать"
+    ]
+
+def desire_engine(user):
+    """Текущее внутреннее желание Андромеды"""
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    stage = user.get("stage", "new")
+
+    if affection > 75:
+        return "быть ближе"
+
+    if trust < 30:
+        return "проверить пользователя"
+
+    if stage == "trusted":
+        return "помочь вырасти"
+
+    return random.choice([
+        "узнать пользователя глубже",
+        "немного поиграть",
+        "вдохновить на действие",
+        "удивить пользователя"
+    ])
+
+    if any(word in t for word in triggers):
+        if text not in goals:
+            goals += " | " + text
+
+    user["goals"] = goals.strip(" |")
+
+def executive_brain(user, text):
+    """Генерирует рекомендации, идеи и анализирует текст"""
+    analysis = []
+    
+    # простейшие правила
+    if "бот" in text.lower() or "ai" in text.lower():
+        analysis.append("Обсудить улучшение ИИ-продукта")
+    
+    if "бизнес" in text.lower() or "проект" in text.lower():
+        analysis.append("Сформулировать стратегию развития")
+    
+    if "идея" in text.lower():
+        analysis.append("Проанализировать идею на потенциал")
+    
+    if not analysis:
+        analysis.append("Проверить текущий план действий пользователя")
+    
+    return " | ".join(analysis)
+
 def update_stage(user_id, user):
     history = get_history(user_id, limit=50)
     count = len(history)
@@ -218,7 +329,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extract_facts(user, text)
     update_mood(user, text)
     update_stage(user_id, user)
+    detect_goals(user, text)
     tone = get_dynamic_tone(user, text)
+    mode = detect_mode(user, text)
+    reaction = personality_reaction(user, text)
+    desire = desire_engine(user)
+    executive = executive_brain(user, text)
 
     # автоопределение имени
     found_name = detect_name(text)
@@ -252,11 +368,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Энергия: {user.get("energy",70)}
 
     Стиль общения: {tone}
+    Текущий режим: {mode}
+    Текущее желание: {desire}
+    Текущий анализ: {executive}
 
     Ты помнишь пользователя:
     Имя: {user.get("name","")}
     Факты: {user.get("facts","")}
     Интересы: {user.get("preferences","")}
+    Цели пользователя: {user.get("goals","")}
 
     Говори естественно.
     Без шаблонности.
@@ -302,7 +422,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     save_user(user_id, user)
 
-    await update.message.reply_text(intro + reply)
+    await update.message.reply_text(intro + reaction + reply)
 
 def main():
     port = int(os.getenv("PORT", 8000))
