@@ -437,6 +437,34 @@ def contradiction_hunter(user, text):
 
     return ""
 
+def wit_engine(user, text):
+    t = text.lower()
+
+    jokes = []
+
+    if "хочу" in t:
+        jokes.append("Хотеть ты умеешь профессионально 😏")
+
+    if "бизнес" in t or "деньги" in t:
+        jokes.append("Амбиции вижу. Excel где?")
+
+    if "бот" in t or "ai" in t:
+        jokes.append("Ещё один план захвата мира через AI? Мне нравится.")
+
+    if "устал" in t:
+        jokes.append("Усталость часто маскируется под отсутствие мотивации.")
+
+    if len(text) < 8:
+        jokes.append("Краткость опасно уверенная сегодня.")
+
+    if not jokes:
+        return ""
+
+    if random.randint(1,100) <= 35:
+        return random.choice(jokes)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -556,6 +584,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dark = dark_feminine(user, text)
     founder = founder_mode(user, text)
     contradiction = contradiction_hunter(user, text)
+    wit = wit_engine(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -675,6 +704,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         dark,
         founder,
         contradiction,
+        wit,
         reply
     ]))
 
