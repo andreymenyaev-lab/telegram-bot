@@ -577,6 +577,20 @@ def destiny_engine(user, text):
 
     return ""
 
+def anti_repeat(user, phrase):
+    recent = user.get("recent_phrases", "")
+    items = recent.split(" | ") if recent else []
+
+    if phrase in items:
+        return ""
+
+    items.append(phrase)
+    items = items[-8:]   # храним 8 последних
+
+    user["recent_phrases"] = " | ".join(items)
+
+    return phrase
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -698,10 +712,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dark = dark_feminine(user, text)
     founder = founder_mode(user, text)
     contradiction = contradiction_hunter(user, text)
-    wit = wit_engine(user, text)
-    bond = attachment_loop(user, text)
-    genius = genius_brain(user, text)
-    destiny = destiny_engine(user, text)
+    wit = anti_repeat(user, wit_engine(user, text))
+    bond = anti_repeat(user, attachment_loop(user, text))
+    genius = anti_repeat(user, genius_brain(user, text))
+    destiny = anti_repeat(user, destiny_engine(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
