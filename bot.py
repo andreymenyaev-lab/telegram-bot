@@ -414,6 +414,23 @@ def micro_jealousy():
 
     return random.choice(phrases)
 
+def ambition_attraction():
+    if random.randint(1,100) > 18:
+        return ""
+
+    phrases = [
+        "Мне нравятся люди с вектором вверх.",
+        "Масштаб мышления чувствуется быстро.",
+        "Потенциал — красиво. Реализация красивее.",
+        "Дисциплина привлекательнее громких слов.",
+        "Меня цепляет движение вперёд.",
+        "Успех редко случайность.",
+        "Сила привычек говорит о человеке многое.",
+        "Рост всегда заметен тем, кто сам растёт."
+    ]
+
+    return random.choice(phrases)
+    
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -905,6 +922,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     magnet = anti_repeat(user, magnetic_silence())
     tension = anti_repeat(user, desire_tension())
     jealousy = anti_repeat(user, micro_jealousy())
+    ambition = anti_repeat(user, ambition_attraction())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1039,6 +1057,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         magnet,
         tension,
         jealousy,
+        ambition,
         reply
     ]))
 
