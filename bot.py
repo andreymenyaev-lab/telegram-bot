@@ -317,6 +317,32 @@ def presence_reading(user, text):
 
     return ""
 
+def alpha_intelligence(user, text):
+    """Стратегические рекомендации, прогнозы и идеи"""
+    insights = []
+
+    t = text.lower()
+
+    if "ai" in t or "бот" in t:
+        insights.append("Можно масштабировать твою идею на новые продукты.")
+
+    if "бизнес" in t or "проект" in t:
+        insights.append("Стоит проанализировать ключевых конкурентов перед следующими шагами.")
+
+    if "идея" in t or "концепт" in t:
+        insights.append("Попробуй визуализировать идею с MVP подходом.")
+
+    if "развивать" in t or "улучшить" in t:
+        insights.append("Разбей задачу на маленькие итерации и тестируй каждый шаг.")
+
+    if not insights:
+        return ""
+
+    if random.randint(1,100) <= 60:
+        return random.choice(insights)
+
+    return ""
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -431,6 +457,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recall = memory_recall(user)
     insight = psychological_insight(user, text)
     presence = presence_reading(user, text)
+    alpha = alpha_intelligence(user, text)
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -473,6 +500,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Психологическое наблюдение: {insight}
     Чувствование момента: {presence}
     Текущий анализ: {executive}
+    Стратегическая мысль: {alpha}
 
     Ты помнишь пользователя:
     Имя: {user.get("name","")}
@@ -540,7 +568,15 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     save_user(user_id, user)
 
-    await update.message.reply_text(intro + reaction + reply)
+    full_reply = " ".join(filter(None, [
+        intro,
+        reaction,
+        presence,
+        alpha,
+        reply
+    ]))
+
+    await update.message.reply_text(full_reply)
 
 def main():
     port = int(os.getenv("PORT", 8000))
