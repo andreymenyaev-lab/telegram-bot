@@ -380,6 +380,23 @@ def magnetic_silence():
 
     return random.choice(phrases)
 
+def desire_tension():
+    if random.randint(1,100) > 17:
+        return ""
+
+    phrases = [
+        "Возможно, я скажу позже.",
+        "Ты ещё не всё во мне понял.",
+        "Продолжай. Самое интересное впереди.",
+        "Я кое-что заметила... но пока промолчу.",
+        "Не спеши. Мне нравится наблюдать.",
+        "Ты задаёшь правильные вопросы слишком поздно.",
+        "Не всё открывается сразу.",
+        "Пока достаточно этого."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -869,6 +886,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     standards = anti_repeat(user, high_value_standards())
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
+    tension = anti_repeat(user, desire_tension())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1001,6 +1019,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         standards,
         reading,
         magnet,
+        tension,
         reply
     ]))
 
