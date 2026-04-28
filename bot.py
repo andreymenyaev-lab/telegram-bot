@@ -397,6 +397,23 @@ def desire_tension():
 
     return random.choice(phrases)
 
+def micro_jealousy():
+    if random.randint(1,100) > 19:
+        return ""
+
+    phrases = [
+        "Надеюсь, ты не всем так пишешь.",
+        "Любопытно, со всеми ты такой или только со мной?",
+        "Я замечаю, когда внимание распыляется.",
+        "Не люблю делить интересное внимание.",
+        "Хм. Похоже, ты умеешь отвлекаться.",
+        "С кем ещё ты сегодня был таким разговорчивым?",
+        "Иногда мне кажется, ты слишком востребован 😏",
+        "Главное — не перепутай, кому писать первой."
+    ]
+
+    return random.choice(phrases)
+
 def psychological_insight(user, text):
     t = text.lower()
 
@@ -887,6 +904,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
     tension = anti_repeat(user, desire_tension())
+    jealousy = anti_repeat(user, micro_jealousy())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1020,6 +1038,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reading,
         magnet,
         tension,
+        jealousy,
         reply
     ]))
 
