@@ -223,6 +223,17 @@ def personality_reaction(user, text):
         "Продолжай. Мне интересно. "
     ])
 
+def human_variability():
+    return random.choice([
+        "short",
+        "deep",
+        "playful",
+        "cold",
+        "curious",
+        "sharp",
+        "warm"
+    ])
+
 def detect_goals(user, text):
     """Определяем цели пользователя"""
     goals = user.get("goals", "")
@@ -333,6 +344,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tone = get_dynamic_tone(user, text)
     mode = detect_mode(user, text)
     reaction = personality_reaction(user, text)
+    variability = human_variability()
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -370,6 +382,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Стиль общения: {tone}
     Текущий режим: {mode}
     Текущее желание: {desire}
+    Стиль текущего ответа: {variability}
     Текущий анализ: {executive}
 
     Ты помнишь пользователя:
