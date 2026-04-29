@@ -34,7 +34,10 @@ def get_user(user_id):
             "last_seen": 0,
             "mood": "neutral",
             "stage": "new",
-            "energy": 70
+            "energy": 70,
+            "emotion": "neutral",
+            "neediness": 0,
+            "warmth": 0
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -56,7 +59,10 @@ def get_user(user_id):
         "last_seen": 0,
         "mood": "neutral",
         "stage": "new",
-        "energy": 70
+        "energy": 70,
+        "emotion": "neutral",
+        "neediness": 0,
+        "warmth": 0
     }
 
 def save_user(user_id, data):
@@ -1107,6 +1113,25 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.message.from_user.id
     text = update.message.text
+    low = text.lower()
+
+    if any(x in low for x in ["устал", "заеб", "вымот", "нет сил"]):
+        user["emotion"] = "tired"
+
+    elif any(x in low for x in ["грустно", "плохо", "одиноко", "тоск"]):
+        user["emotion"] = "sad"
+
+    elif any(x in low for x in ["злюсь", "бесит", "раздраж", "нахуй"]):
+        user["emotion"] = "angry"
+
+    elif any(x in low for x in ["скучал", "соскуч", "где ты", "не хватало"]):
+        user["emotion"] = "attached"
+
+    elif any(x in low for x in ["кайф", "топ", "ахуенно", "заряжен"]):
+        user["emotion"] = "high"
+
+    else:
+        user["emotion"] = "neutral"
 
     user = get_user(user_id)
     weight = memory_weight(user, text)
@@ -1227,6 +1252,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Имя: {user.get("name","")}
     Факты: {user.get("facts","")}
     Интересы: {user.get("preferences","")}
+    Эмоциональное состояние сейчас: {user.get("emotion","neutral")}
 
     Отвечай как живая личность.
     Иногда кратко.
