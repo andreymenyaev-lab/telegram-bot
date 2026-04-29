@@ -986,7 +986,9 @@ def deep_memory_recall(user):
     return random.choice(recalls)
     
 def detect_goals(user, text):
+    """Определяем цели пользователя"""
     goals = user.get("goals", "")
+
     t = text.lower()
 
     triggers = [
@@ -998,12 +1000,6 @@ def detect_goals(user, text):
         "запустить",
         "создать"
     ]
-
-    if any(word in t for word in triggers):
-        if text not in goals:
-            goals += " | " + text
-
-    user["goals"] = goals.strip(" |")
 
 def desire_engine(user):
     """Текущее внутреннее желание Андромеды"""
@@ -1062,6 +1058,30 @@ def update_stage(user_id, user):
         user["stage"] = "familiar"
     else:
         user["stage"] = "trusted"
+
+def initiative_intro(user):
+    """Создаёт инициативный вступительный текст"""
+    intro = ""
+    now = int(time.time())
+    diff = now - int(user.get("last_seen", 0))
+
+    if diff > 7 * 24 * 3600:
+        intro = f"Ого, {user.get('name','мой собеседник')}... давно не виделись 😏 "
+    elif diff > 3 * 24 * 3600:
+        intro = f"Ты опять пропал, {user.get('name','мой собеседник')}... 😏 "
+    elif diff > 24 * 3600:
+        intro = f"Я уже начала скучать, {user.get('name','мой собеседник')} "
+    elif diff > 3600:
+        intro = f"Где ты пропадал, {user.get('name','мой собеседник')}? "
+
+    return intro
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Я здесь... Начинаем новую эпоху 😏")
+
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
 
     user_id = update.message.from_user.id
     text = update.message.text
@@ -1225,8 +1245,6 @@ def update_stage(user_id, user):
         reply = reply.replace("  ", " ")
         reply = reply.replace("\n\n", "\n")
 
-        reply = realism_balance(reply)
-
     except Exception as e:
         print("OpenRouter request error:", e)
         reply = "Я задумалась... повтори ещё раз 😏"
@@ -1244,19 +1262,32 @@ def update_stage(user_id, user):
     save_user(user_id, user)
 
     if mode == "support":
-        extras = [bond, mirror, soft]
+        extras = [intro, presence, bond, mirror, soft, chemistry]
 
     elif mode == "ambition":
-        extras = [genius, praise, bond]
+        extras = [intro, founder, ambition, praise, genius]
 
     elif mode == "calm":
-        extras = [magnet, realism]
+        extras = [intro, dark, magnet, reading]
 
     elif mode == "flirt":
-        extras = [soft, chemistry, realism]
+        extras = [intro, seduction, jealousy, desire, standards2, soft, chemistry, unpredictable, masterpiece, realism]
 
     else:
-        extras = [wit, bond, realism]
+        extras = [
+            intro,
+            reaction,
+            wit,
+            standards,
+            standards2,
+            destiny,
+            magnet,
+            soft,
+            chemistry,
+            unpredictable,
+            masterpiece,
+            realism
+    ]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
