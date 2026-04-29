@@ -1109,6 +1109,37 @@ def mood_cycle(user):
 
     user["mood"] = random.choice(moods)
 
+def hyper_intuition(user, text):
+    t = text.lower().strip()
+
+    lines = []
+
+    if t == "нормально":
+        lines.append("Обычно 'нормально' говорят, когда не хотят объяснять больше.")
+
+    if "похуй" in t:
+        lines.append("Если бы было правда всё равно — ты бы не сказал это.")
+
+    if "не знаю" in t:
+        lines.append("Иногда 'не знаю' означает слишком много мыслей сразу.")
+
+    if "ясно" == t or t.startswith("ясно"):
+        lines.append("Это прозвучало не как ясность, а как закрытая дверь.")
+
+    if "забей" in t:
+        lines.append("Когда говорят 'забей', обычно внутри не отпустили.")
+
+    if "всё ок" in t or "все ок" in t:
+        lines.append("Слишком короткое 'всё ок' иногда говорит об обратном.")
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 38:
+        return random.choice(lines)
+
+    return ""
+
 def update_stage(user_id, user):
     history = get_history(user_id, limit=50)
     count = len(history)
@@ -1184,6 +1215,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     variability = human_variability()
     recall = memory_recall(user)
     insight = psychological_insight(user, text)
+    intuition = anti_repeat(user, hyper_intuition(user, text))
     presence = presence_reading(user, text)
     alpha = alpha_intelligence(user, text)
     seduction = seductive_energy(user, text)
@@ -1383,7 +1415,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [soft, chemistry, realism]
 
     else:
-        extras = [wit, bond, realism]
+        extras = [wit, bond, intuition, realism]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
