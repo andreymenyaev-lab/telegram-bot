@@ -1278,6 +1278,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extras = extras[:2]
 
     full_reply = " ".join(extras + [reply])
+    trash = 
+        "Ты сегодня любопытство.",
+        "Продолжай. Мне интересно.",
+        "Посмотрим, чем удивишь меня сейчас.",
+        "Уже лучше",
+        "Мне интересно.",
+    ]
+    for t in trash:
+        full_reply = full_reply.replace(t, "")
+        
+    full_reply = " ".join(full_reply.split())
 
     await update.message.reply_text(full_reply)
 
