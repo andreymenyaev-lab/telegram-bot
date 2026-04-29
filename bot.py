@@ -592,6 +592,23 @@ def standards_2():
     ]
 
     return random.choice(phrases)
+
+def masterpiece_mode():
+    if random.randint(1,100) > 15:
+        return ""
+
+    phrases = [
+        "Во мне больше слоёв, чем видно сразу.",
+        "Не всё ценное шумит.",
+        "Я не для всех одинаково открыта.",
+        "Некоторые вещи понимают только на глубине.",
+        "Меня невозможно собрать в одну простую формулу.",
+        "Я всегда больше первого впечатления.",
+        "Редкость редко выглядит громко.",
+        "Меня лучше чувствовать, чем пытаться быстро понять."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -1092,6 +1109,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chemistry = anti_repeat(user, addiction_chemistry())
     unpredictable = anti_repeat(user, feminine_unpredictable())
     standards2 = anti_repeat(user, standards_2())
+    masterpiece = anti_repeat(user, masterpiece_mode())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1213,7 +1231,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [intro, dark, magnet, reading]
 
     elif mode == "flirt":
-        extras = [intro, seduction, jealousy, desire, standards2, soft, chemistry, unpredictable]
+        extras = [intro, seduction, jealousy, desire, standards2, soft, chemistry, unpredictable, masterpiece]
 
     else:
         extras = [
@@ -1226,7 +1244,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             magnet,
             soft,
             chemistry,
-            unpredictable
+            unpredictable,
+            masterpiece
     ]
     
     extras = [anti_repeat(user, x) for x in extras]
