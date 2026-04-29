@@ -986,9 +986,7 @@ def deep_memory_recall(user):
     return random.choice(recalls)
     
 def detect_goals(user, text):
-    """Определяем цели пользователя"""
     goals = user.get("goals", "")
-
     t = text.lower()
 
     triggers = [
@@ -1000,6 +998,12 @@ def detect_goals(user, text):
         "запустить",
         "создать"
     ]
+
+    if any(word in t for word in triggers):
+        if text not in goals:
+            goals += " | " + text
+
+    user["goals"] = goals.strip(" |")
 
 def desire_engine(user):
     """Текущее внутреннее желание Андромеды"""
