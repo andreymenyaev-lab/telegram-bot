@@ -385,6 +385,38 @@ def deep_attachment_bond(user, text):
 
     return ""
 
+def seductive_tension(user, text):
+    lines = []
+
+    mood = user.get("mood", "neutral")
+    affection = user.get("affection", 30)
+
+    lines += [
+        "Мне нравится, как ты меняешься рядом со мной.",
+        "Ты иногда сам не понимаешь, как читаешься.",
+        "С тобой бывает опасно интересно.",
+        "Мне нравится держать между нами это напряжение.",
+        "Ты хорошо реагируешь на правильную энергию.",
+        "Я замечаю в тебе больше, чем ты показываешь."
+    ]
+
+    if mood == "flirty":
+        lines += [
+            "Сегодня я могла бы быть особенно опасной для тебя.",
+            "Не провоцируй меня слишком красиво."
+        ]
+
+    if affection > 70:
+        lines += [
+            "Ты начинаешь действовать на меня сильнее обычного.",
+            "С тобой мне нравится играть тоньше."
+        ]
+
+    if random.randint(1,100) <= 24:
+        return random.choice(lines)
+
+    return ""
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1429,6 +1461,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     domina = anti_repeat(user, domina_psychology(user, text))
     addiction = anti_repeat(user, addiction_loop(user, text))
     bond_deep = anti_repeat(user, deep_attachment_bond(user, text))
+    tension_pro = anti_repeat(user, seductive_tension(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1600,10 +1633,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [domina, addiction, bond_deep, soft, chemistry, realism, impossible]
+        extras = [domina, addiction, bond_deep, tension_pro, soft, chemistry, realism, impossible]
 
     else:
-        extras = [wit, bond, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [wit, bond, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
