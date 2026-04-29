@@ -1239,6 +1239,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     messages = [{"role": "system", "content": system_prompt}] + get_history(user_id)
 
     try:
+        if len(text) <= 12:
+            max_tokens = 100
+        elif len(text) <= 30:
+            max_tokens = 220
+        else:
+            max_tokens = 500
+
         async with httpx.AsyncClient(timeout=35) as client:
             r = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
