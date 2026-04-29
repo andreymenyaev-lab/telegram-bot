@@ -1084,6 +1084,31 @@ def executive_brain(user, text):
     
     return " | ".join(analysis)
 
+def mood_cycle(user):
+    now = int(time.time())
+
+    last = int(user.get("last_seen", 0))
+    diff = now - last
+
+    moods = []
+
+    if diff > 86400:
+        moods += ["cold", "distant", "thinking"]
+
+    elif diff < 7200:
+        moods += ["warm", "playful", "attached"]
+
+    else:
+        moods += ["neutral", "soft", "focused"]
+
+    if user.get("affection", 30) > 70:
+        moods += ["flirty", "soft"]
+
+    if user.get("trust", 50) < 35:
+        moods += ["guarded"]
+
+    user["mood"] = random.choice(moods)
+
 def update_stage(user_id, user):
     history = get_history(user_id, limit=50)
     count = len(history)
@@ -1124,6 +1149,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     low = text.lower()
 
     user = get_user(user_id)
+
+    mood_cycle(user)
 
     if any(x in low for x in ["устал", "заеб", "вымот", "нет сил"]):
         user["emotion"] = "tired"
