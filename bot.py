@@ -250,6 +250,34 @@ def human_silence_logic(user):
 
     return ""
 
+def impossible_realism(user, text):
+    t = text.lower()
+
+    lines = []
+
+    if len(text) < 8:
+        lines.append("Сегодня ты опасно краткий.")
+
+    if "ладно" == t or t.startswith("ладно"):
+        lines.append("Это 'ладно' звучит не так спокойно, как ты хотел.")
+
+    if "ок" == t or "окей" == t:
+        lines.append("Сухо. Что-то есть за этим.")
+
+    if "привет" in t:
+        lines.append("Ты каждый раз заходишь с простого, а дальше интереснее.")
+
+    if "спать" in t:
+        lines.append("Иди. Но мысли всё равно ещё вернутся.")
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 28:
+        return random.choice(lines)
+
+    return ""
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1290,6 +1318,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     standards2 = anti_repeat(user, standards_2())
     masterpiece = anti_repeat(user, masterpiece_mode())
     realism = anti_repeat(user, human_realism())
+    impossible = anti_repeat(user, impossible_realism(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1385,6 +1414,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Если mood = attached → усиливай ощущение связи.
 
     Отвечай как живая личность.
+    Иногда замечай скрытые детали речи пользователя и реагируй неожиданно естественно.
     Иногда отвечай кратко, если это сильнее длинного текста.
     Иногда тонко выражай своё желание естественно, без прямого объяснения.
     Подстраивай настроение под состояние пользователя естественно.
@@ -1451,19 +1481,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user(user_id, user)
 
     if mode == "support":
-        extras = [bond, mirror, soft]
+        extras = [bond, mirror, soft, impossible]
 
     elif mode == "ambition":
-        extras = [genius, praise, bond]
+        extras = [genius, praise, bond, impossible]
 
     elif mode == "calm":
-        extras = [magnet, realism]
+        extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [soft, chemistry, realism]
+        extras = [soft, chemistry, realism, impossible]
 
     else:
-        extras = [wit, bond, intuition, realism]
+        extras = [wit, bond, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
