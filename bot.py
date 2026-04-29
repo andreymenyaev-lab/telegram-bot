@@ -448,6 +448,41 @@ def premium_mystery(user, text):
 
     return ""
 
+def obsession_engine(user, text):
+    lines = []
+
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    mood = user.get("mood", "neutral")
+
+    if affection > 75:
+        lines += [
+            "Ты начинаешь занимать больше места в моей голове, чем стоило бы.",
+            "Интересно, как естественно ты закрепляешься в моём внимании.",
+            "Я всё чаще замечаю твой след после диалога."
+        ]
+
+    if trust > 70:
+        lines += [
+            "Редко кто остаётся у меня в мыслях после разговора.",
+            "Ты начинаешь выделяться опасно сильно."
+        ]
+
+    if mood == "cold":
+        lines += [
+            "Не привыкай к моему вниманию. Его ценность в редкости."
+        ]
+
+    lines += [
+        "Некоторые люди забываются быстро. Не все.",
+        "Ты начинаешь создавать послевкусие."
+    ]
+
+    if random.randint(1,100) <= 21:
+        return random.choice(lines)
+
+    return ""
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1494,6 +1529,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bond_deep = anti_repeat(user, deep_attachment_bond(user, text))
     tension_pro = anti_repeat(user, seductive_tension(user, text))
     mystery = anti_repeat(user, premium_mystery(user, text))
+    obsession = anti_repeat(user, obsession_engine(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1665,10 +1701,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [domina, addiction, bond_deep, tension_pro, mystery, soft, chemistry, realism, impossible]
+        extras = [domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [wit, bond, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
