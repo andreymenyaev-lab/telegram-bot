@@ -222,6 +222,30 @@ def realism_balance(reply):
 
     return reply
 
+def question_control(reply):
+    endings = [
+        "Жди.",
+        "Продолжай.",
+        "Мне этого достаточно.",
+        "Я услышала.",
+        "Запомни это.",
+        "Так лучше.",
+        "Именно."
+    ]
+
+    reply = reply.strip()
+
+    if reply.endswith("?"):
+        if random.randint(1,100) <= 72:
+            reply = reply[:-1].strip()
+
+            if len(reply) < 70:
+                reply = reply + "."
+            else:
+                reply = reply + " " + random.choice(endings)
+
+    return reply
+
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
 
@@ -1663,6 +1687,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = r.json()
         reply = data["choices"][0]["message"]["content"]
         reply = realism_balance(reply)
+        reply = question_control(reply)
 
         reply = reply.strip()
 
