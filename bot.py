@@ -129,16 +129,42 @@ def analyze_preferences(user_id, text):
         print("prefs error:", e)
 
 def extract_facts(user, text):
-    """Автоматически вытаскиваем ключевые факты из текста"""
     facts = user.get("facts", "").split(" | ") if user.get("facts") else []
 
-    # Простейшая фильтрация повторов
-    keywords = ["люблю", "интересуюсь", "хочу", "планирую", "занимаюсь", "делаю"]
-    for kw in keywords:
-        if kw in text.lower():
-            snippet = text.strip()
-            if snippet not in facts:
-                facts.append(snippet)
+    banned = [
+        "помочь вырасти",
+        "ты сегодня любопытный",
+        "интересно",
+        "хм",
+        "ясно"
+    ]
+
+    t = text.strip()
+
+    if len(t) < 8:
+        return
+
+    if any(x in t.lower() for x in banned):
+        return
+
+    triggers = [
+        "люблю",
+        "хочу",
+        "мечтаю",
+        "цель",
+        "работаю",
+        "строю",
+        "делаю",
+        "интересуюсь",
+        "занимаюсь",
+        "планирую"
+    ]
+
+    if any(x in t.lower() for x in triggers):
+        if t not in facts:
+            facts.append(t)
+
+    facts = facts[-12:]
 
     user["facts"] = " | ".join(facts)
 
