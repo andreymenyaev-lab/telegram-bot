@@ -558,6 +558,23 @@ def addiction_chemistry():
     ]
 
     return random.choice(phrases)
+
+def feminine_unpredictable():
+    if random.randint(1,100) > 18:
+        return ""
+
+    phrases = [
+        "Может да. А может я просто наблюдаю.",
+        "Сегодня у меня другое настроение.",
+        "Не жди, что я всегда одинаковая.",
+        "Иногда я сама себя удивляю.",
+        "Всё зависит от того, как ты зайдёшь.",
+        "Я не обязана быть предсказуемой.",
+        "Иногда лучше не пытаться меня просчитать.",
+        "Мне нравится менять ритм без предупреждения."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -1056,6 +1073,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     praise = anti_repeat(user, rare_praise())
     soft = anti_repeat(user, hidden_softness())
     chemistry = anti_repeat(user, addiction_chemistry())
+    unpredictable = anti_repeat(user, feminine_unpredictable())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1177,7 +1195,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [intro, dark, magnet, reading]
 
     elif mode == "flirt":
-        extras = [intro, seduction, jealousy, desire, soft, chemistry]
+        extras = [intro, seduction, jealousy, desire, soft, chemistry, unpredictable]
 
     else:
         extras = [
@@ -1188,7 +1206,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             destiny,
             magnet,
             soft,
-            chemistry
+            chemistry,
+            unpredictable
     ]
     
     extras = [anti_repeat(user, x) for x in extras]
