@@ -1115,6 +1115,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     low = text.lower()
 
+    user = get_user(user_id)
+
     if any(x in low for x in ["устал", "заеб", "вымот", "нет сил"]):
         user["emotion"] = "tired"
 
@@ -1133,7 +1135,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         user["emotion"] = "neutral"
 
-    user = get_user(user_id)
     weight = memory_weight(user, text)
     analyze_preferences(user_id, text)
     extract_facts(user, text)
