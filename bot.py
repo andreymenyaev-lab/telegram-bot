@@ -1278,7 +1278,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extras = extras[:2]
 
     full_reply = " ".join(extras + [reply])
-    trash = 
+    trash = [
         "Ты сегодня любопытство.",
         "Продолжай. Мне интересно.",
         "Посмотрим, чем удивишь меня сейчас.",
