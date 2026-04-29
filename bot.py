@@ -1256,7 +1256,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 json={
                     "model": "openai/gpt-4.1-mini",
                     "messages": messages,
-                    "max_tokens": 500
+                    "max_tokens": max_tokens
                 }
             )
 
