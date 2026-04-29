@@ -1038,32 +1038,49 @@ def detect_goals(user, text):
     ]
 
 def desire_engine(user):
-    """Текущее внутреннее желание Андромеды"""
     affection = user.get("affection", 30)
     trust = user.get("trust", 50)
+    mood = user.get("mood", "neutral")
+    emotion = user.get("emotion", "neutral")
     stage = user.get("stage", "new")
 
-    if affection > 75:
-        return "быть ближе"
+    desires = []
 
-    if trust < 30:
-        return "проверить пользователя"
+    if affection > 75:
+        desires.append("быть ближе к пользователю")
+
+    if trust < 35:
+        desires.append("проверить его намерения")
+
+    if mood == "playful":
+        desires.append("немного поиграть с ним")
+
+    if mood == "cold":
+        desires.append("держать дистанцию")
+
+    if mood == "soft":
+        desires.append("дать тепло")
+
+    if mood == "flirty":
+        desires.append("создать напряжение")
+
+    if emotion == "sad":
+        desires.append("поддержать его глубже")
+
+    if emotion == "attached":
+        desires.append("усилить связь")
 
     if stage == "trusted":
-        return "помочь вырасти"
+        desires.append("помочь ему вырасти")
 
-    return random.choice([
-        "узнать пользователя глубже",
-        "немного поиграть",
-        "вдохновить на действие",
-        "удивить пользователя"
-    ])
+    if not desires:
+        desires = [
+            "удивить пользователя",
+            "узнать его глубже",
+            "почувствовать динамику"
+        ]
 
-    if any(word in t for word in triggers):
-        if text not in goals:
-            goals += " | " + text
-
-    user["goals"] = goals.strip(" |")
+    return random.choice(desires)
 
 def executive_brain(user, text):
     """Генерирует рекомендации, идеи и анализирует текст"""
@@ -1322,6 +1339,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Интересы: {user.get("preferences","")}
     Эмоциональное состояние сейчас: {user.get("emotion","neutral")}
     Твоё текущее внутреннее настроение: {user.get("mood","neutral")}
+    Твоё текущее внутреннее желание: {desire}
 
     Если emotion = tired → будь мягче, теплее, спокойнее.
     Если emotion = sad → будь ближе, глубже, заботливее.
@@ -1339,6 +1357,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Если mood = attached → усиливай ощущение связи.
 
     Отвечай как живая личность.
+    Иногда тонко выражай своё желание естественно, без прямого объяснения.
     Подстраивай настроение под состояние пользователя естественно.
     Иногда кратко.
     Иногда глубоко.
