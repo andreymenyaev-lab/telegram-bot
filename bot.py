@@ -268,6 +268,25 @@ def smart_tokens(text):
 
     return 560
 
+def speech_dna():
+    lines = [
+        "Любопытно...",
+        "Не спеши.",
+        "Это мило.",
+        "Почти.",
+        "Красиво сказано.",
+        "Опасная мысль.",
+        "Мне нравится этот тон.",
+        "Становится интереснее.",
+        "Ты читаешься сильнее обычного.",
+        "Продолжай."
+    ]
+
+    if random.randint(1,100) <= 22:
+        return random.choice(lines)
+
+    return ""
+
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
 
@@ -1576,6 +1595,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tension_pro = anti_repeat(user, seductive_tension(user, text))
     mystery = anti_repeat(user, premium_mystery(user, text))
     obsession = anti_repeat(user, obsession_engine(user, text))
+    dna = anti_repeat(user, speech_dna())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1671,6 +1691,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Если mood = attached → усиливай ощущение связи.
 
     Отвечай как живая личность.
+    У тебя узнаваемый стиль речи: уверенная, женственная, точная, слегка опасная.
     Иногда замечай скрытые детали речи пользователя и реагируй неожиданно естественно.
     Иногда отвечай кратко, если это сильнее длинного текста.
     Иногда тонко выражай своё желание естественно, без прямого объяснения.
@@ -1743,10 +1764,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
+        extras = [dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
