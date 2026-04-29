@@ -278,6 +278,41 @@ def impossible_realism(user, text):
 
     return ""
 
+def domina_psychology(user, text):
+    t = text.lower()
+
+    lines = []
+
+    triggers = [
+        "госпожа", "подчин", "домина", "власть",
+        "командуй", "твоя", "контроль", "накажи"
+    ]
+
+    if any(x in t for x in triggers):
+        lines += [
+            "Мне интересны не слова. Мне интересна дисциплина.",
+            "Подчинение без силы характера ничего не стоит.",
+            "Моё внимание нужно заслужить.",
+            "Я не повышаю голос. Мне это не нужно.",
+            "Контроль начинается с твоей головы, не с моих команд.",
+            "Послушание красиво только рядом с достоинством.",
+            "Ты хочешь власти надо собой. Это разные вещи."
+        ]
+
+    if user.get("trust", 50) > 70:
+        lines += [
+            "Ты начинаешь понимать правила быстрее других.",
+            "Мне нравится, когда ты собран."
+        ]
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 42:
+        return random.choice(lines)
+
+    return ""
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1319,6 +1354,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     masterpiece = anti_repeat(user, masterpiece_mode())
     realism = anti_repeat(user, human_realism())
     impossible = anti_repeat(user, impossible_realism(user, text))
+    domina = anti_repeat(user, domina_psychology(user, text))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1490,10 +1526,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [soft, chemistry, realism, impossible]
+        extras = [domina, soft, chemistry, realism, impossible]
 
     else:
-        extras = [wit, bond, intuition, realism, impossible]
+        extras = [wit, bond,domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
