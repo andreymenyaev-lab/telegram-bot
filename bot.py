@@ -1205,7 +1205,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "openai/gpt-4o-mini",
+                    "model": "openai/gpt-4.1-mini",
                     "messages": messages,
                     "max_tokens": 500
                 }
@@ -1213,6 +1213,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         data = r.json()
         reply = data["choices"][0]["message"]["content"]
+
+        reply = reply.strip()
+
+        if reply.startswith('"') and reply.endswith('"'):
+            reply = reply[1:-1].strip()
+
+        if reply.startswith("«") and reply.endswith("»"):
+            reply = reply[1:-1].strip()
+
+        reply = reply.replace("  ", " ")
+        reply = reply.replace("\n\n", "\n")
 
     except Exception as e:
         print("OpenRouter request error:", e)
