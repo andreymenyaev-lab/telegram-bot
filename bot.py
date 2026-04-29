@@ -1283,7 +1283,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Продолжай. Мне интересно.",
         "Посмотрим, чем удивишь меня сейчас.",
         "Уже лучше",
-        "Мне интересно.",
+        "Мне интересно."
     ]
 
     for t in trash:
