@@ -66,16 +66,24 @@ def get_user(user_id):
     }
 
 def save_user(user_id, data):
-    update_data = data.copy()
+    try:
+        update_data = data.copy()
 
-    for field in ["user_id", "created_at", "updated_at"]:
-        if field in update_data:
-            del update_data[field]
+        # нельзя обновлять системные поля
+        for field in ["user_id", "created_at"]:
+            if field in update_data:
+                del update_data[field]
 
-    supabase.table("users")\
-        .update(update_data)\
-        .eq("user_id", user_id)\
-        .execute()
+        # авто-время обновления
+        update_data["updated_at"] = int(time.time())
+
+        supabase.table("users") \
+            .update(update_data) \
+            .eq("user_id", user_id) \
+            .execute()
+
+    except Exception as e:
+        print("SAVE USER ERROR:", e)
 
 def add_history(user_id, role, content):
     supabase.table("chat_history").insert({
