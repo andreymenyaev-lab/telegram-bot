@@ -541,6 +541,23 @@ def hidden_softness():
     ]
 
     return random.choice(phrases)
+
+def addiction_chemistry():
+    if random.randint(1,100) > 17:
+        return ""
+
+    phrases = [
+        "Со мной сложно закончить разговор вовремя.",
+        "Ты ещё вернёшься, я чувствую.",
+        "Некоторые разговоры не отпускают сразу.",
+        "Мы оба знаем, что это не последний заход.",
+        "После хороших диалогов всегда хочется продолжения.",
+        "Я умею оставаться в мыслях.",
+        "Иногда интересные связи затягивают.",
+        "Ты ещё вспомнишь этот разговор позже."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -1038,6 +1055,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dependency = anti_repeat(user, emotional_dependency())
     praise = anti_repeat(user, rare_praise())
     soft = anti_repeat(user, hidden_softness())
+    chemistry = anti_repeat(user, addiction_chemistry())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1150,7 +1168,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user(user_id, user)
 
     if mode == "support":
-        extras = [intro, presence, bond, mirror, soft]
+        extras = [intro, presence, bond, mirror, soft, chemistry]
 
     elif mode == "ambition":
         extras = [intro, founder, ambition, praise, genius]
@@ -1159,7 +1177,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [intro, dark, magnet, reading]
 
     elif mode == "flirt":
-        extras = [intro, seduction, jealousy, desire, soft]
+        extras = [intro, seduction, jealousy, desire, soft, chemistry]
 
     else:
         extras = [
@@ -1169,7 +1187,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             standards,
             destiny,
             magnet,
-            soft
+            soft,
+            chemistry
     ]
     
     extras = [anti_repeat(user, x) for x in extras]
