@@ -1285,6 +1285,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Уже лучше",
         "Мне интересно.",
     ]
+
     for t in trash:
         full_reply = full_reply.replace(t, "")
         
