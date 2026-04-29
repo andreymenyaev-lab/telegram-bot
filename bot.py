@@ -246,6 +246,28 @@ def question_control(reply):
 
     return reply
 
+def smart_tokens(text):
+    t = text.lower()
+
+    # roleplay / flirt / scene
+    if any(x in t for x in [
+        "госпожа", "домина", "секс", "порка",
+        "шлеп", "подчин", "командуй"
+    ]):
+        return 700
+
+    # длинный ввод пользователя
+    if len(text) > 220:
+        return 420
+
+    if len(text) > 120:
+        return 500
+
+    if len(text) < 25:
+        return 650
+
+    return 560
+
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
 
@@ -1663,12 +1685,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     messages = [{"role": "system", "content": system_prompt}] + get_history(user_id)
 
     try:
-        if len(text) <= 12:
-            max_tokens = 100
-        elif len(text) <= 30:
-            max_tokens = 220
-        else:
-            max_tokens = 500
+        max_reply_tokens = smart_tokens(text)
 
         async with httpx.AsyncClient(timeout=35) as client:
             r = await client.post(
@@ -1680,7 +1697,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 json={
                     "model": "openai/gpt-4.1-mini",
                     "messages": messages,
-                    "max_tokens": max_tokens
+                    "max_tokens": max_reply_tokens
                 }
             )
 
