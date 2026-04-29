@@ -1070,7 +1070,34 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     save_user(user_id, user)
 
-    full_reply = " ".join(filter(None, [
+    extras = [
+        intro,
+        reaction,
+        presence,
+        alpha,
+        seduction,
+        dark,
+        founder,
+        contradiction,
+        wit,
+        bond,
+        genius,
+        destiny,
+        magnet,
+        tension,
+        jealousy,
+        ambition,
+        dependency,
+        praise
+    ]
+
+    extras = [x for x in extras if x]
+
+    random.shuffle(extras)
+
+    extras = extras[:2]
+
+    full_reply = " ".join(extras + [reply])
         intro,
         reaction,
         presence,
