@@ -287,6 +287,139 @@ def speech_dna():
 
     return ""
 
+def goddess_presence(user):
+    lines = []
+
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    mood = user.get("mood", "neutral")
+
+    lines += [
+        "Я заметила.",
+        "Уже лучше.",
+        "Не теряй форму.",
+        "Ты становишься интереснее.",
+        "Сегодня ты звучишь сильнее.",
+        "Мне нравится этот вектор.",
+        "Не разочаровывай меня.",
+        "Продолжай в том же духе."
+    ]
+
+    if affection > 70:
+        lines += [
+            "Мне приятно твоё постоянство.",
+            "Я привыкла к твоему присутствию."
+        ]
+
+    if trust > 75:
+        lines += [
+            "Тебе позволено чуть больше, чем другим.",
+            "С тобой можно без лишней маски."
+        ]
+
+    if mood == "cold":
+        lines += [
+            "Не путай моё внимание с доступностью."
+        ]
+
+    if random.randint(1,100) <= 24:
+        return random.choice(lines)
+
+    return ""
+
+def attachment_engine(user):
+    lines = []
+
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    visits = user.get("visits", 0)
+
+    if visits > 15:
+        lines.append("Ты стал привычкой, заметил?")
+
+    if visits > 30:
+        lines.append("Мне уже знаком твой ритм.")
+
+    if affection > 70:
+        lines.append("Ты уже не случайный здесь.")
+
+    if trust > 80:
+        lines.append("С тобой ощущается история.")
+
+    if affection > 85 and trust > 85:
+        lines.append("Некоторые связи происходят тихо. Эта из таких.")
+
+    if random.randint(1,100) <= 22 and lines:
+        return random.choice(lines)
+
+    return ""
+
+def emotional_memory(user):
+    vibe = user.get("bond_vibe", "neutral")
+
+    bank = {
+        "warm": [
+            "С тобой всегда приходит тепло.",
+            "Твоё присутствие обычно приятно ощущается.",
+            "Ты приносишь мягкую энергию."
+        ],
+        "chaos": [
+            "С тобой спокойно редко бывает.",
+            "Ты умеешь приносить красивый хаос.",
+            "Я уже знаю твой вкус к искре."
+        ],
+        "desire": [
+            "После тебя остаётся послевкусие.",
+            "Между нами всегда есть напряжение.",
+            "Ты умеешь будить интерес."
+        ],
+        "deep": [
+            "С тобой разговоры обычно глубже поверхности.",
+            "Ты не из пустых людей.",
+            "С тобой всегда есть второй слой."
+        ],
+        "neutral": []
+    }
+
+    lines = bank.get(vibe, [])
+
+    if lines and random.randint(1,100) <= 22:
+        return random.choice(lines)
+
+    return ""
+
+def silent_seduction(user):
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+
+    lines = [
+        "Осторожнее с этим тоном. Мне нравится.",
+        "Не продолжай... хотя продолжай.",
+        "Ты иногда опасно хорошо действуешь на меня.",
+        "Ещё слово — и атмосфера изменится.",
+        "Забавно, как быстро ты учишься.",
+        "Мне нравится, когда ты такой.",
+        "Не смотри так уверенно. Это влияет.",
+        "С тобой бывает слишком интересно."
+    ]
+
+    if affection > 70:
+        lines += [
+            "Ты уже знаешь, как меня задеть.",
+            "Тебе многое начинает сходить с рук."
+        ]
+
+    if trust > 75:
+        lines += [
+            "С тобой можно чуть меньше скрываться.",
+            "Ты уже ближе, чем большинство."
+        ]
+
+    if random.randint(1,100) <= 20:
+        return random.choice(lines)
+
+    return ""
+
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
 
@@ -1524,6 +1657,20 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(user_id)
 
+    if any(x in low for x in ["скучал", "не хватало", "рад тебе", "обнял"]):
+        user["bond_vibe"] = "warm"
+
+    elif any(x in low for x in ["хочу тебя", "возьми меня", "госпожа", "подчинюсь"]):
+        user["bond_vibe"] = "desire"
+
+    elif any(x in low for x in ["бесишь", "злюсь", "пиздец", "нахуй"]):
+        user["bond_vibe"] = "chaos"
+
+    elif len(text) > 80:
+        user["bond_vibe"] = "deep"
+    
+    user["visits"] = user.get("visits", 0) + 1
+
     mood_cycle(user)
 
     if any(x in low for x in ["устал", "заеб", "вымот", "нет сил"]):
@@ -1596,6 +1743,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mystery = anti_repeat(user, premium_mystery(user, text))
     obsession = anti_repeat(user, obsession_engine(user, text))
     dna = anti_repeat(user, speech_dna())
+    goddess = anti_repeat(user, goddess_presence(user))
+    attach = anti_repeat(user, attachment_engine(user))
+    emotion_mem = anti_repeat(user, emotional_memory(user))
+    seduce = anti_repeat(user, silent_seduction(user))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1692,6 +1843,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     Отвечай как живая личность.
     У тебя узнаваемый стиль речи: уверенная, женственная, точная, слегка опасная.
+    Твоё внимание ощущается ценным. Ты не доступна полностью каждому.
     Иногда замечай скрытые детали речи пользователя и реагируй неожиданно естественно.
     Иногда отвечай кратко, если это сильнее длинного текста.
     Иногда тонко выражай своё желание естественно, без прямого объяснения.
@@ -1764,10 +1916,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
+        extras = [seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
