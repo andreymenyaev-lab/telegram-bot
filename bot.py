@@ -1262,32 +1262,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user(user_id, user)
 
     if mode == "support":
-        extras = [intro, presence, bond, mirror, soft, chemistry]
+        extras = [bond, mirror, soft]
 
     elif mode == "ambition":
-        extras = [intro, founder, ambition, praise, genius]
+        extras = [genius, praise, bond]
 
     elif mode == "calm":
-        extras = [intro, dark, magnet, reading]
+        extras = [magnet, realism]
 
     elif mode == "flirt":
-        extras = [intro, seduction, jealousy, desire, standards2, soft, chemistry, unpredictable, masterpiece, realism]
+        extras = [soft, chemistry, realism]
 
     else:
-        extras = [
-            intro,
-            reaction,
-            wit,
-            standards,
-            standards2,
-            destiny,
-            magnet,
-            soft,
-            chemistry,
-            unpredictable,
-            masterpiece,
-            realism
-    ]
+        extras = [wit, bond, realism]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
