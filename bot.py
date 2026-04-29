@@ -1098,33 +1098,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     extras = extras[:2]
 
     full_reply = " ".join(extras + [reply])
-        intro,
-        reaction,
-        presence,
-        alpha,
-        seduction,
-        dark,
-        founder,
-        contradiction,
-        wit,
-        bond,
-        genius,
-        destiny,
-        memory_flash,
-        mirror,
-        silence,
-        desire,
-        chaos,
-        standards,
-        reading,
-        magnet,
-        tension,
-        jealousy,
-        ambition,
-        dependency,
-        praise,
-        reply
-    ]))
 
     await update.message.reply_text(full_reply)
 
