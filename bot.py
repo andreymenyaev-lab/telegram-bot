@@ -175,6 +175,23 @@ def get_dynamic_tone(user, text):
     
     return "уверенная, женственная, доминантная"
 
+def detect_context_mode(text):
+    t = text.lower()
+
+    if any(x in t for x in ["устал", "плохо", "грустно", "тяжело", "депресс", "нет сил"]):
+        return "support"
+
+    if any(x in t for x in ["делаю", "проект", "работаю", "деньги", "рост", "бизнес"]):
+        return "ambition"
+
+    if any(x in t for x in ["бесит", "злит", "достало"]):
+        return "calm"
+
+    if any(x in t for x in ["привет", "как ты", "соскучилась"]):
+        return "flirt"
+
+    return "normal"
+
 def detect_mode(user, text):
     """Определяем режим Андромеды"""
     t = text.lower()
@@ -931,6 +948,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     evolve_personality(user)
     detect_goals(user, text)
     tone = get_dynamic_tone(user, text)
+    mode = detect_context_mode(text)
     mode = detect_mode(user, text)
     reaction = personality_reaction(user, text)
     variability = human_variability()
@@ -1070,25 +1088,26 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     save_user(user_id, user)
 
-    extras = [
-        intro,
-        reaction,
-        presence,
-        alpha,
-        seduction,
-        dark,
-        founder,
-        contradiction,
-        wit,
-        bond,
-        genius,
-        destiny,
-        magnet,
-        tension,
-        jealousy,
-        ambition,
-        dependency,
-        praise
+    if mode == "support":
+        extras = [intro, presence, bond, mirror]
+
+    elif mode == "ambition":
+        extras = [intro, founder, ambition, praise, genius]
+
+    elif mode == "calm":
+        extras = [intro, dark, magnet, reading]
+
+    elif mode == "flirt":
+        extras = [intro, seduction, chaos, jealousy, desire]
+
+    else:
+        extras = [
+            intro,
+            reaction,
+            wit,
+            standards,
+            destiny,
+            magnet
     ]
 
     extras = [x for x in extras if x]
