@@ -1095,7 +1095,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         jealousy,
         ambition,
         dependency,
-        prise,
+        praise,
         reply
     ]))
 
