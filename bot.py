@@ -168,6 +168,23 @@ def extract_facts(user, text):
 
     user["facts"] = " | ".join(facts)
 
+def anti_repeat(user, phrase):
+    if not phrase:
+        return ""
+
+    last = user.get("last_phrases", "")
+    recent = last.split(" | ") if last else []
+
+    if phrase in recent:
+        return ""
+
+    recent.append(phrase)
+    recent = recent[-8:]
+
+    user["last_phrases"] = " | ".join(recent)
+
+    return phrase
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1136,6 +1153,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             magnet
     ]
 
+    extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
 
     random.shuffle(extras)
