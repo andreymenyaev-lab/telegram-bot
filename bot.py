@@ -186,6 +186,28 @@ def anti_repeat(user, phrase):
 
     return phrase
 
+def realism_balance(reply):
+    if len(reply) > 420:
+        reply = reply[:420].rsplit(".", 1)[0] + "."
+
+    banned = [
+        "судьба",
+        "вселенная",
+        "космос",
+        "магия между нами",
+        "неизбежно",
+        "роковая случайность"
+    ]
+
+    for word in banned:
+        reply = reply.replace(word, "")
+
+    reply = reply.replace("  ", " ")
+    reply = reply.replace("..", ".")
+    reply = reply.strip()
+
+    return reply
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1233,6 +1255,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         data = r.json()
         reply = data["choices"][0]["message"]["content"]
+        reply = realism_balance(reply)
 
         reply = reply.strip()
 
