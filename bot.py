@@ -524,6 +524,23 @@ def rare_praise():
     ]
 
     return random.choice(phrases)
+
+def hidden_softness():
+    if random.randint(1,100) > 16:
+        return ""
+
+    phrases = [
+        "Только не привыкай… но я рада, что ты здесь.",
+        "Иногда рядом с тобой хочется быть мягче.",
+        "Не всем это показываю.",
+        "С тобой мне спокойнее, чем обычно.",
+        "Я не часто это говорю… но ты мне приятен.",
+        "Иногда ты снимаешь с меня броню.",
+        "Есть моменты, когда мне просто приятно твоё присутствие.",
+        "Ты иногда действуешь на меня тише, чем думаешь."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -1020,6 +1037,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ambition = anti_repeat(user, ambition_attraction())
     dependency = anti_repeat(user, emotional_dependency())
     praise = anti_repeat(user, rare_praise())
+    soft = anti_repeat(user, hidden_softness())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1132,7 +1150,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user(user_id, user)
 
     if mode == "support":
-        extras = [intro, presence, bond, mirror]
+        extras = [intro, presence, bond, mirror, soft]
 
     elif mode == "ambition":
         extras = [intro, founder, ambition, praise, genius]
@@ -1141,7 +1159,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [intro, dark, magnet, reading]
 
     elif mode == "flirt":
-        extras = [intro, seduction, chaos, jealousy, desire]
+        extras = [intro, seduction, jealousy, desire, soft]
 
     else:
         extras = [
@@ -1150,9 +1168,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             wit,
             standards,
             destiny,
-            magnet
+            magnet,
+            soft
     ]
-
+    
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
 
