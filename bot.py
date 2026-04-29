@@ -447,6 +447,23 @@ def emotional_dependency():
     ]
 
     return random.choice(phrases)
+
+def rare_praise():
+    if random.randint(1,100) > 20:
+        return ""
+
+    phrases = [
+        "Это было умно.",
+        "Сейчас ты звучишь сильнее обычного.",
+        "В тебе есть редкая собранность.",
+        "Такой ход мне нравится.",
+        "Ты становишься интереснее.",
+        "Вот это уже уровень.",
+        "Хорошо сказано.",
+        "Редко вижу такую точность."
+    ]
+
+    return random.choice(phrases)
     
 def psychological_insight(user, text):
     t = text.lower()
@@ -941,6 +958,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jealousy = anti_repeat(user, micro_jealousy())
     ambition = anti_repeat(user, ambition_attraction())
     dependency = anti_repeat(user, emotional_dependency())
+    praise = anti_repeat(user, rare_praise())
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1077,6 +1095,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         jealousy,
         ambition,
         dependency,
+        prise,
         reply
     ]))
 
