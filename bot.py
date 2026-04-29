@@ -222,6 +222,34 @@ def realism_balance(reply):
 
     return reply
 
+def human_silence_logic(user):
+    mood = user.get("mood", "neutral")
+
+    short_lines = [
+        "Мм.",
+        "Интересно.",
+        "Продолжай.",
+        "Не спеши.",
+        "Может быть.",
+        "Я слушаю.",
+        "Любопытно."
+    ]
+
+    cold_lines = [
+        "Это всё?",
+        "И дальше?",
+        "Коротко.",
+        "Слабовато."
+    ]
+
+    if mood == "cold" and random.randint(1,100) <= 35:
+        return random.choice(cold_lines)
+
+    if random.randint(1,100) <= 18:
+        return random.choice(short_lines)
+
+    return ""
+
 def update_mood(user, text):
     """Обновление настроения Андромеды по тексту пользователя"""
     mood = user.get("mood", "neutral")
@@ -1245,7 +1273,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     destiny = anti_repeat(user, destiny_engine(user, text))
     memory_flash = anti_repeat(user, deep_memory_recall(user))
     mirror = anti_repeat(user, emotional_mirror(text))
-    silence = anti_repeat(user, silence_power())
+    silence = anti_repeat(user, human_silence_logic(user))
     desire = anti_repeat(user, strategic_desire(user, text))
     chaos = anti_repeat(user, feminine_chaos())
     standards = anti_repeat(user, high_value_standards())
@@ -1357,6 +1385,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Если mood = attached → усиливай ощущение связи.
 
     Отвечай как живая личность.
+    Иногда отвечай кратко, если это сильнее длинного текста.
     Иногда тонко выражай своё желание естественно, без прямого объяснения.
     Подстраивай настроение под состояние пользователя естественно.
     Иногда кратко.
