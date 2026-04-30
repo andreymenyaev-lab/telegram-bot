@@ -41,7 +41,11 @@ def get_user(user_id):
             "last_message_at": 0,
             "absence_days": 0,
             "last_topic": "",
-            "topic_updated_at": 0
+            "topic_updated_at": 0,
+            "attach_score": 0,
+            "days_known": 0,
+            "messages_total": 0,
+            "last_seen_day": 0,
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -68,7 +72,11 @@ def get_user(user_id):
         "neediness": 0,
         "warmth": 0,
         "last_message_at": 0,
-        "absence_days": 0
+        "absence_days": 0,
+        "attach_score": 0,
+        "days_known": 0,
+        "messages_total": 0,
+        "last_seen_day": 0,
     }
 
 def save_user(user_id, data):
@@ -274,6 +282,45 @@ def realism_balance(reply):
     reply = reply.strip()
 
     return reply
+
+def attachment_tracker(user):
+    now_day = int(time.time() / 86400)
+
+    last_day = user.get("last_seen_day", 0)
+    days_known = user.get("days_known", 0)
+    total = user.get("messages_total", 0)
+    score = user.get("attach_score", 0)
+
+    if last_day != now_day:
+        user["days_known"] = days_known + 1
+        user["last_seen_day"] = now_day
+
+    user["messages_total"] = total + 1
+
+    if total > 80:
+        score += 1
+
+    if user["days_known"] > 7:
+        score += 1
+
+    if user["messages_total"] > 250:
+        score += 2
+
+    user["attach_score"] = min(score, 100)
+
+def attachment_presence(user):
+    score = user.get("attach_score", 0)
+    days = user.get("absence_days", 0)
+
+    if days >= 3:
+        return "Решил исчезнуть? Смело."
+    if days == 1:
+        return "Вернулся. Уже лучше."
+    if score >= 8:
+        return "Ты сегодня особенно рядом."
+    if score >= 4:
+        return "Я начинаю привыкать к тебе."
+    return ""
 
 def topic_memory(user):
     topic = user.get("last_topic", "")
@@ -2160,6 +2207,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(user_id)
 
+    attachment_tracker(user)
+
     now = int(time.time())
 
     last_msg = user.get("last_message_at", 0)
@@ -2249,6 +2298,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     moment = anti_repeat(user, signature_moments(user))
     absence = anti_repeat(user, absence_reaction(user))
     topic_mem = anti_repeat(user, topic_memory(user))
+    attach_line = anti_repeat(user, attachment_presence(user))
     layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
@@ -2452,7 +2502,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [attach_line, topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = final_polish_selector(user, text, extras)
