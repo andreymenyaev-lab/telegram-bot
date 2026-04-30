@@ -40,6 +40,8 @@ def get_user(user_id):
             "warmth": 0,
             "last_message_at": 0,
             "absence_days": 0
+            "last_topic": "",
+            "topic_updated_at": 0
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -233,6 +235,24 @@ def final_polish_selector(user, text, extras):
 
     return unique[:limit]
 
+def detect_topic(text):
+    t = text.lower()
+
+    topics = {
+        "work": ["работ", "началь", "смен", "офис", "дела", "устал на работе"],
+        "money": ["деньг", "зарплат", "доход", "бедн", "богат", "финанс"],
+        "health": ["болит", "болею", "устал", "сон", "не выспал", "энергии нет"],
+        "love": ["девушк", "отношен", "любов", "расстался", "ревность"],
+        "self": ["развит", "цель", "мотивац", "будущее", "дисциплин"],
+        "sex": ["хочу тебя", "госпожа", "возьми", "секс", "подчин"]
+    }
+
+    for topic, words in topics.items():
+        if any(w in t for w in words):
+            return topic
+
+    return ""
+
 def realism_balance(reply):
     if len(reply) > 420:
         reply = reply[:420].rsplit(".", 1)[0] + "."
@@ -254,6 +274,50 @@ def realism_balance(reply):
     reply = reply.strip()
 
     return reply
+
+def topic_memory(user):
+    topic = user.get("last_topic", "")
+    updated = user.get("topic_updated_at", 0)
+
+    if not topic or updated == 0:
+        return ""
+
+    days = int((time.time() - updated) / 86400)
+
+    if days > 3:
+        return ""
+
+    data = {
+        "work": [
+            "Как там история с работой?",
+            "На работе полегче стало?"
+        ],
+        "money": [
+            "С финансами стало спокойнее?",
+            "Как там денежный фронт?"
+        ],
+        "health": [
+            "Сегодня самочувствие лучше?",
+            "Удалось восстановиться?"
+        ],
+        "love": [
+            "С личной историей что сейчас?",
+            "По чувствам стало яснее?"
+        ],
+        "self": [
+            "Продвинулся в своих целях?",
+            "Не слил настрой на развитие?"
+        ],
+        "sex": [
+            "Ты всё ещё в том настроении?",
+            "Желание не остыло?"
+        ]
+    }
+
+    if topic in data and random.randint(1,100) <= 22:
+        return random.choice(data[topic])
+
+    return ""
 
 def question_control(reply):
     endings = [
@@ -2108,6 +2172,12 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user["last_message_at"] = now
 
+    topic = detect_topic(text)
+
+    if topic:
+        user["last_topic"] = topic
+        user["topic_updated_at"] = now
+
     if any(x in low for x in ["скучал", "не хватало", "рад тебе", "обнял"]):
         user["bond_vibe"] = "warm"
 
@@ -2178,6 +2248,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     discipline = anti_repeat(user, reward_punish(user, text))
     moment = anti_repeat(user, signature_moments(user))
     absence = anti_repeat(user, absence_reaction(user))
+    topic_mem = anti_repeat(user, topic_memory(user))
     layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
@@ -2381,7 +2452,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = final_polish_selector(user, text, extras)
