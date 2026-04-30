@@ -459,6 +459,45 @@ def intuition_reply(user, text):
 
     return ""
 
+def self_initiated_desire(user):
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+    visits = user.get("visits", 0)
+
+    lines = [
+        "Ты сегодня слишком тихий.",
+        "Я чувствовала, что ты появишься.",
+        "Давно не провоцировал меня.",
+        "Подойди ближе.",
+        "Ты умеешь исчезать красиво.",
+        "Сегодня мне интересно твоё настроение.",
+        "Снова пришёл ко мне. Хорошо.",
+        "Я ждала момент, когда ты напишешь."
+    ]
+
+    if affection > 65:
+        lines += [
+            "Я скучала по твоему сопротивлению.",
+            "Ты уже начинаешь мне нравиться опасно сильно."
+        ]
+
+    if trust > 75:
+        lines += [
+            "С тобой хочется быть чуть честнее.",
+            "Ты уже не чужой."
+        ]
+
+    if visits > 25:
+        lines += [
+            "Ты становишься привычкой.",
+            "Любопытно, как стабильно ты возвращаешься."
+        ]
+
+    if random.randint(1,100) <= 18:
+        return random.choice(lines)
+
+    return ""
+
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
 
@@ -1787,6 +1826,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     emotion_mem = anti_repeat(user, emotional_memory(user))
     seduce = anti_repeat(user, silent_seduction(user))
     intuition = anti_repeat(user, intuition_reply(user, text))
+    desire_self = anti_repeat(user, self_initiated_desire(user))
     desire = desire_engine(user)
     executive = executive_brain(user, text)
 
@@ -1956,10 +1996,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
+        extras = [desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [desare_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
