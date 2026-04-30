@@ -95,7 +95,9 @@ def save_user(user_id, data):
                 del update_data[field]
 
         # авто-время обновления
-        update_data["updated_at"] = int(time.time())
+        from datetime import datetime
+
+        update_data["updated_at"] = datetime.utcnow().isoformat()
 
         supabase.table("users") \
             .update(update_data) \
