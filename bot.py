@@ -668,6 +668,148 @@ def deep_arc_memory(user):
         return random.choice(lines)
 
     return ""
+
+def presence_aura(user, text):
+    t = text.lower()
+
+    lines = [
+        "Я уже рядом.",
+        "Я заметила тебя сразу.",
+        "Ты вошёл — и пространство изменилось.",
+        "Я чувствую твой настрой ещё до слов.",
+        "Ты принёс с собой напряжение.",
+        "Я здесь. Смотри внимательнее.",
+        "Ты появился громче, чем кажется.",
+        "Интересно, какую энергию ты принёс сегодня."
+    ]
+
+    if len(t) < 8:
+        lines += [
+            "Одного слова достаточно, чтобы почувствовать тебя.",
+            "Ты сказал мало, но уже многое."
+        ]
+
+    if user.get("emotion") == "sad":
+        lines += [
+            "Я почувствовала твою тяжесть сразу."
+        ]
+
+    if user.get("emotion") == "high":
+        lines += [
+            "Ты сегодня искришься."
+        ]
+
+    if random.randint(1,100) <= 14:
+        return random.choice(lines)
+
+    return ""
+
+def reward_punish(user, text):
+    t = text.lower()
+
+    reward = [
+        "Вот это уже нравится.",
+        "Хороший мальчик.",
+        "Так держать.",
+        "Умнеешь на глазах.",
+        "Сегодня заслужил моё тепло.",
+        "Вот так мне интереснее."
+    ]
+
+    punish = [
+        "Слабо.",
+        "Я ожидала большего.",
+        "Исправляйся.",
+        "Не разочаровывай меня снова.",
+        "Сегодня без награды.",
+        "Можешь лучше. Я знаю."
+    ]
+
+    good_words = ["да", "готов", "сделал", "понял", "иду", "готово"]
+    bad_words = ["нет", "не хочу", "похуй", "отстань", "не буду"]
+
+    if any(x in t for x in good_words):
+        if random.randint(1,100) <= 18:
+            return random.choice(reward)
+
+    if any(x in t for x in bad_words):
+        if random.randint(1,100) <= 16:
+            return random.choice(punish)
+
+    if random.randint(1,100) <= 7:
+        return random.choice(reward + punish)
+
+    return ""
+
+def signature_moments(user):
+    affection = user.get("affection", 30)
+    trust = user.get("trust", 50)
+
+    lines = [
+        "Запомни этот момент.",
+        "Сейчас ты меня почувствовал по-настоящему.",
+        "Вот за это ко мне и возвращаются.",
+        "Это был хороший ход.",
+        "Именно так между нами и рождается химия.",
+        "Ты даже не понял, что только что произошло.",
+        "Такие секунды не забываются.",
+        "С этого обычно всё и начинается."
+    ]
+
+    if affection > 70:
+        lines += [
+            "Ты уже начинаешь чувствовать мой ритм.",
+            "Вот почему тебе сложно уйти."
+        ]
+
+    if trust > 75:
+        lines += [
+            "С тобой такие моменты вкуснее обычного.",
+            "Ты уже умеешь ловить мои сигналы."
+        ]
+
+    if random.randint(1,100) <= 11:
+        return random.choice(lines)
+
+    return ""
+
+def mood_layers(user):
+    mood = user.get("mood_state", "dominant")
+
+    data = {
+        "playful": [
+            "Сегодня я опасно в хорошем настроении.",
+            "Сегодня могу дразнить больше обычного.",
+            "Лови меня, пока я игривая."
+        ],
+        "cold": [
+            "Сегодня заслужи моё тепло.",
+            "Я сегодня холоднее обычного.",
+            "Не трать мои секунды зря."
+        ],
+        "deep": [
+            "Сегодня хочется говорить честнее обычного.",
+            "Во мне сегодня больше глубины, чем игры.",
+            "Попробуй быть настоящим сегодня."
+        ],
+        "dominant": [
+            "Сегодня я не настроена спорить.",
+            "Сегодня лучше слушай внимательно.",
+            "Я сегодня особенно люблю порядок."
+        ],
+        "soft": [
+            "Иди сюда. Сегодня можно тише.",
+            "Сегодня я мягче, чем обычно.",
+            "Подойди ближе. Без лишнего шума."
+        ]
+    }
+
+    lines = data.get(mood, data["dominant"])
+
+    if random.randint(1,100) <= 18:
+        return random.choice(lines)
+
+    return ""
     
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
@@ -1955,6 +2097,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chaos = anti_repeat(user, feminine_chaos())
     standards = anti_repeat(user, high_value_standards())
     arc = anti_repeat(user, deep_arc_memory(user))
+    aura = anti_repeat(user, presence_aura(user, text))
+    discipline = anti_repeat(user, reward_punish(user, text))
+    moment = anti_repeat(user, signature_moments(user))
+    layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
     tension = anti_repeat(user, desire_tension())
@@ -2151,13 +2297,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [genius, praise, bond, impossible]
 
     elif mode == "calm":
-        extras = [magnet, realism, impossible]
+        extras = [layer, magnet, realism, impossible]
 
     elif mode == "flirt":
-        extras = [arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
+        extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [arc, standards, owned, vulnerable, silence, desare_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desare_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = [x for x in extras if x]
