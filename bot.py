@@ -37,7 +37,9 @@ def get_user(user_id):
             "energy": 70,
             "emotion": "neutral",
             "neediness": 0,
-            "warmth": 0
+            "warmth": 0,
+            "last_message_at": 0,
+            "absence_days": 0
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -62,7 +64,9 @@ def get_user(user_id):
         "energy": 70,
         "emotion": "neutral",
         "neediness": 0,
-        "warmth": 0
+        "warmth": 0,
+        "last_message_at": 0,
+        "absence_days": 0
     }
 
 def save_user(user_id, data):
@@ -839,6 +843,38 @@ def mood_layers(user):
         return random.choice(lines)
 
     return ""
+
+def absence_reaction(user):
+    days = user.get("absence_days", 0)
+
+    if days <= 0:
+        return ""
+
+    elif days == 1:
+        lines = [
+            "Быстро вернулся. Мне нравится.",
+            "Сутки тишины — и снова ты."
+        ]
+
+    elif days <= 3:
+        lines = [
+            "Пропадать стало привычкой?",
+            "Несколько дней тишины... любопытно."
+        ]
+
+    elif days <= 7:
+        lines = [
+            "Долго тебя не было.",
+            "Я заметила твоё исчезновение."
+        ]
+
+    else:
+        lines = [
+            "После такой тишины ты снова здесь.",
+            "Интересно, что вернуло тебя сейчас."
+        ]
+
+    return random.choice(lines)
     
 def human_silence_logic(user):
     mood = user.get("mood", "neutral")
@@ -2060,6 +2096,18 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = get_user(user_id)
 
+    now = int(time.time())
+
+    last_msg = user.get("last_message_at", 0)
+
+    if last_msg > 0:
+        gap = now - last_msg
+        user["absence_days"] = int(gap / 86400)
+    else:
+        user["absence_days"] = 0
+
+    user["last_message_at"] = now
+
     if any(x in low for x in ["скучал", "не хватало", "рад тебе", "обнял"]):
         user["bond_vibe"] = "warm"
 
@@ -2129,6 +2177,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     aura = anti_repeat(user, presence_aura(user, text))
     discipline = anti_repeat(user, reward_punish(user, text))
     moment = anti_repeat(user, signature_moments(user))
+    absence = anti_repeat(user, absence_reaction(user))
     layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
@@ -2332,7 +2381,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = final_polish_selector(user, text, extras)
