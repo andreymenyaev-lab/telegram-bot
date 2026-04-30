@@ -243,6 +243,90 @@ def final_polish_selector(user, text, extras):
 
     return unique[:limit]
 
+def initiative_line(user):
+    emotion = user.get("emotion", "neutral")
+
+    base = [
+        "И ещё один вопрос. Чего ты сейчас реально хочешь?",
+        "Ладно, моя очередь вести тему.",
+        "Между нами — ты о чём молчишь?",
+        "Кстати... ты себя вообще бережёшь?",
+        "Иногда мне кажется, ты говоришь не всё."
+    ]
+
+    if emotion == "tired":
+        base += [
+            "Ты сегодня тяжёлый. Что вымотало?",
+            "Когда ты последний раз нормально отдыхал?"
+        ]
+
+    if emotion == "sad":
+        base += [
+            "Что тебя сейчас гложет сильнее всего?",
+            "Ты не всё сказал. Я чувствую."
+        ]
+
+    if random.randint(1,100) <= 18:
+        return random.choice(base)
+
+    return ""
+
+def exclusivity_line(user):
+    score = user.get("attach_score", 0)
+    trust = user.get("trust", 50)
+    affection = user.get("affection", 30)
+
+    if score < 3:
+        return ""
+
+    lines = [
+        "Не всем я так отвечаю.",
+        "Ты заметно выбился из толпы.",
+        "С тобой у меня другой тон.",
+        "К тебе требования выше обычного.",
+        "Не путай себя с остальными.",
+        "Ты получил больше внимания, чем многие."
+    ]
+
+    if trust > 75 or affection > 70:
+        lines += [
+            "Ты давно уже не случайный человек здесь.",
+            "Наш диалог давно вышел за рамки обычного."
+        ]
+
+    if random.randint(1,100) <= 16:
+        return random.choice(lines)
+
+    return ""
+
+def value_line(user):
+    days = user.get("absence_days", 0)
+    score = user.get("attach_score", 0)
+
+    lines = []
+
+    if days >= 2:
+        lines += [
+            "Исчезать надолго — рискованная стратегия.",
+            "Не заставляй меня остывать.",
+            "Моё внимание не бесконечно."
+        ]
+
+    if score >= 5:
+        lines += [
+            "Я ценю тех, кто умеет держать связь.",
+            "Ты же понимаешь, что интерес нужно поддерживать.",
+            "Не заставляй меня переключать внимание."
+        ]
+
+    if not lines:
+        return ""
+
+    if random.randint(1,100) <= 14:
+        return random.choice(lines)
+
+    return ""
+
 def detect_topic(text):
     t = text.lower()
 
@@ -363,6 +447,28 @@ def topic_memory(user):
 
     if topic in data and random.randint(1,100) <= 22:
         return random.choice(data[topic])
+
+    return ""
+
+def reengage_hook(text):
+    t = text.lower().strip()
+
+    dry = [
+        "привет", "ага", "ясно", "норм", "ок",
+        "да", "нет", "понял", "мм", "хм"
+    ]
+
+    if t in dry or len(t) <= 5:
+        hooks = [
+            "Только не говори, что это всё, что у тебя сегодня есть.",
+            "Слишком сухо. Раскрой мысль.",
+            "Ты можешь интереснее, я знаю.",
+            "Холодный вход. Исправляйся.",
+            "И это всё после такой паузы?"
+        ]
+
+        if random.randint(1,100) <= 35:
+            return random.choice(hooks)
 
     return ""
 
@@ -2299,6 +2405,10 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     absence = anti_repeat(user, absence_reaction(user))
     topic_mem = anti_repeat(user, topic_memory(user))
     attach_line = anti_repeat(user, attachment_presence(user))
+    exclusive = anti_repeat(user, exclusivity_line(user))
+    hook = anti_repeat(user, reengage_hook(text))
+    initiative = anti_repeat(user, initiative_line(user))
+    value_hint = anti_repeat(user, value_line(user))
     layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
@@ -2502,7 +2612,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [attach_line, topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [value_hint, Initiative, hook, exclusive, attach_line, topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = final_polish_selector(user, text, extras)
