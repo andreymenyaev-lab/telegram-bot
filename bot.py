@@ -199,6 +199,35 @@ def anti_repeat(user, phrase):
     user["last_phrases"] = " | ".join(recent)
 
     return phrase
+    
+def final_polish_selector(user, text, extras):
+    clean = [x for x in extras if x and x.strip()]
+
+    if not clean:
+        return []
+
+    emotion = user.get("emotion", "neutral")
+    trust = user.get("trust", 50)
+
+    limit = 2
+
+    if len(text) < 8:
+        limit = 1
+
+    if emotion in ["sad", "tired"]:
+        limit = 1
+
+    if trust > 75 and len(text) > 40:
+        limit = 2
+
+    random.shuffle(clean)
+
+    unique = []
+    for x in clean:
+        if x not in unique:
+            unique.append(x)
+
+    return unique[:limit]
 
 def realism_balance(reply):
     if len(reply) > 420:
@@ -2306,13 +2335,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desare_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
-    extras = [x for x in extras if x]
+    extras = final_polish_selector(user, text, extras)
 
-    random.shuffle(extras)
-
-    extras = extras[:2]
-
-    full_reply = " ".join(extras + [reply])
+    full_reply = " ".join(extras + [reply]).strip()
     trash = [
         "Ты сегодня любопытство.",
         "Продолжай. Мне интересно.",
