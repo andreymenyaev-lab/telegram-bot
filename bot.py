@@ -2124,7 +2124,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     silence = anti_repeat(user, human_silence_logic(user))
     desire = anti_repeat(user, strategic_desire(user, text))
     chaos = anti_repeat(user, feminine_chaos())
-    standards = anti_repeat(user, high_value_standards())
+    standards = anti_repeat(user, high_value_standards(user, text))
     arc = anti_repeat(user, deep_arc_memory(user))
     aura = anti_repeat(user, presence_aura(user, text))
     discipline = anti_repeat(user, reward_punish(user, text))
