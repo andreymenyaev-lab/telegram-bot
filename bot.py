@@ -39,7 +39,7 @@ def get_user(user_id):
             "neediness": 0,
             "warmth": 0,
             "last_message_at": 0,
-            "absence_days": 0
+            "absence_days": 0,
             "last_topic": "",
             "topic_updated_at": 0
         }).execute()
