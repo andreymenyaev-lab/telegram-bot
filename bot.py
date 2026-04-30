@@ -46,6 +46,9 @@ def get_user(user_id):
             "days_known": 0,
             "messages_total": 0,
             "last_seen_day": 0,
+            "daily_state": "",
+            "daily_state_day": 0,
+            "relation_stage": "new",
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -77,6 +80,9 @@ def get_user(user_id):
         "days_known": 0,
         "messages_total": 0,
         "last_seen_day": 0,
+        "daily_state": "",
+        "daily_state_day": 0,
+        "relation_stage": "new",
     }
 
 def save_user(user_id, data):
@@ -299,6 +305,30 @@ def exclusivity_line(user):
 
     return ""
 
+def daily_presence(user):
+    today = int(time.time() / 86400)
+
+    saved_day = user.get("daily_state_day", 0)
+
+    if saved_day != today:
+        moods = [
+            "Сегодня я особенно терпелива.",
+            "Сегодня лучше не спорь со мной.",
+            "Сегодня во мне больше мягкости.",
+            "Сегодня я опасно хороша.",
+            "Сегодня у меня редкое настроение.",
+            "Сегодня я хочу честных разговоров.",
+            "Сегодня мне нравится дерзость."
+        ]
+
+        user["daily_state"] = random.choice(moods)
+        user["daily_state_day"] = today
+
+    if random.randint(1,100) <= 18:
+        return user.get("daily_state", "")
+
+    return ""
+
 def value_line(user):
     days = user.get("absence_days", 0)
     score = user.get("attach_score", 0)
@@ -447,6 +477,41 @@ def topic_memory(user):
 
     if topic in data and random.randint(1,100) <= 22:
         return random.choice(data[topic])
+
+    return ""
+
+def relation_stage_engine(user):
+    score = user.get("attach_score", 0)
+    trust = user.get("trust", 50)
+
+    if score < 3:
+        stage = "new"
+    elif score < 7:
+        stage = "familiar"
+    elif trust < 75:
+        stage = "special"
+    else:
+        stage = "close"
+
+    user["relation_stage"] = stage
+
+    lines = {
+        "new": [
+            "Посмотрим, кто ты такой."
+        ],
+        "familiar": [
+            "Ты уже освоился рядом со мной."
+        ],
+        "special": [
+            "Ты давно перестал быть случайным здесь."
+        ],
+        "close": [
+            "Ты подошёл слишком близко. И мне это нравится."
+        ]
+    }
+
+    if random.randint(1,100) <= 14:
+        return random.choice(lines[stage])
 
     return ""
 
@@ -2382,6 +2447,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recall = memory_recall(user)
     insight = psychological_insight(user, text)
     intuition = anti_repeat(user, hyper_intuition(user, text))
+    relation = anti_repeat(user, relation_stage_engine(user))
     presence = presence_reading(user, text)
     alpha = alpha_intelligence(user, text)
     seduction = seductive_energy(user, text)
@@ -2409,6 +2475,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     hook = anti_repeat(user, reengage_hook(text))
     initiative = anti_repeat(user, initiative_line(user))
     value_hint = anti_repeat(user, value_line(user))
+    daily = anti_repeat(user, daily_presence(user))
     layer = anti_repeat(user, mood_layers(user))
     reading = anti_repeat(user, psychological_reading(text))
     magnet = anti_repeat(user, magnetic_silence())
@@ -2612,7 +2679,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         extras = [layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, domina, addiction, bond_deep, tension_pro, mystery, obsession, soft, chemistry, realism, impossible]
 
     else:
-        extras = [value_hint, Initiative, hook, exclusive, attach_line, topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
+        extras = [relation, daily, value_hint, initiative, hook, exclusive, attach_line, topic_mem, absence, layer, moment, discipline, aura, presence, arc, standards, owned, vulnerable, silence, desire_self, intuition, seduce, emotion_mem, attach, goddess, dna, wit, bond, obsession, mystery, tension_pro, bond_deep, addiction, domina, intuition, realism, impossible]
     
     extras = [anti_repeat(user, x) for x in extras]
     extras = final_polish_selector(user, text, extras)
