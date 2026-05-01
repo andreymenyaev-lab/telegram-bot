@@ -49,6 +49,7 @@ def get_user(user_id):
             "daily_state": "",
             "daily_state_day": 0,
             "relation_stage": "new",
+            "brain_mode": "default",
         }).execute()
 
         r2 = supabase.table("users").select("*").eq("user_id", user_id).execute()
@@ -83,6 +84,7 @@ def get_user(user_id):
         "daily_state": "",
         "daily_state_day": 0,
         "relation_stage": "new",
+        "brain_mode": "default",
     }
 
 def save_user(user_id, data):
@@ -2378,6 +2380,41 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     low = text.lower()
 
+    if low.startswith("/science"):
+        user = get_user(update.message.from_user.id)
+        user["brain_mode"] = "science"
+        save_user(user_id, user)
+        await update.message.reply_text("Режим: Научный интеллект активирован.")
+        return
+
+    elif low.startswith("/business"):
+        user = get_user(update.message.from_user.id)
+        user["brain_mode"] = "business"
+        save_user(user_id, user)
+        await update.message.reply_text("Режим: Стратегический интеллект активирован.")
+        return
+
+    elif low.startswith("/deep"):
+        user = get_user(update.message.from_user.id)
+        user["brain_mode"] = "deep"
+        save_user(user_id, user)
+        await update.message.reply_text("Режим: Глубокое мышление активировано.")
+        return
+
+    elif low.startswith("/write"):
+        user = get_user(update.message.from_user.id)
+        user["brain_mode"] = "write"
+        save_user(user_id, user)
+        await update.message.reply_text("Режим: Авторский интеллект активирован.")
+        return
+
+    elif low.startswith("/default"):
+        user = get_user(update.message.from_user.id)
+        user["brain_mode"] = "default"
+        save_user(user_id, user)
+        await update.message.reply_text("Режим: Андромеда активирован.")
+        return
+
     user = get_user(user_id)
 
     attachment_tracker(user)
@@ -2532,9 +2569,42 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user["affection"] -= 5 + weight
         user["trust"] -= 5 + weight
 
+    mode = user.get("brain_mode", "default")
+
+    mode_prompt = ""
+
+    if mode == "science":
+        mode_prompt = """
+    Отвечай как эксперт-учёный.
+    Глубоко, точно, логично.
+    Объясняй сложное простым языком.
+    Если тема научная — раскрывай суть.
+    """
+
+    elif mode == "business":
+        mode_prompt = """
+    Отвечай как сильный стратег.
+    Практично, структурно, по делу.
+    Ищи рычаги роста, деньги, системы.
+    """
+
+    elif mode == "deep":
+        mode_prompt = """
+    Отвечай глубоко и философски.
+    Раскрывай психологию, мотивацию, внутренние причины.
+    """
+
+    elif mode == "write":
+        mode_prompt = """
+    Отвечай как сильный автор.
+    Красиво, цепко, умно.
+    Умей писать тексты, посты, речи.
+    """
+
     # системный промпт
     system_prompt = f"""
     Ты Андромеда.
+    {mode_prompt}
 
     Ты не ассистент.
     Ты не бот.
